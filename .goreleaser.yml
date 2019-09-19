@@ -1,0 +1,69 @@
+env:
+ - GO111MODULE=on
+ - GOPROXY=https://proxy.golang.org
+before:
+  hooks:
+   - go mod download
+
+builds:
+- env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+
+checksum:
+  name_template: '{{ .ProjectName }}_checksums.txt'
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+    - '^ignore:'
+    - Merge pull request
+    - Merge branch
+
+release:
+  draft: true
+
+# dockers:
+# - image_templates:
+#   - 'alexeiled/secrets-init:{{ .Tag }}'
+#   - 'alexeiled/secrets-init:v{{ .Major }}.{{ .Minor }}'
+#   - 'alexeiled/secrets-init:latest'
+#   binaries:
+#   - secrets-init
+#   build_flag_templates:
+#   - "--label=org.label-schema.schema-version=1.0"
+#   - "--label=org.label-schema.version={{.Version}}"
+#   - "--label=org.label-schema.name={{.ProjectName}}"
+
+archives:
+  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
+    format_overrides:
+    - goos: windows
+      format: zip
+    files:
+    - LICENSE.txt
+    - README.md
+
+nfpms:
+  - name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    homepage:  https://github.com/doitintl/secrets-init
+    description: Minimalistic init system with AWS secrets support
+    maintainer: Alexei Ledenev <alexei.led@gmail.com>
+    license: "Apache 2.0"
+    vendor: SecretsInit
+    formats:
+    - deb
+    - rpm

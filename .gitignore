@@ -1,1 +1,7 @@
 .vscode
+
+# ignore binary
+secrets-init
+
+# ignore goreleaser binaries
+dist/
