@@ -32,17 +32,17 @@ changelog:
 release:
   draft: true
 
-# dockers:
-# - image_templates:
-#   - 'alexeiled/secrets-init:{{ .Tag }}'
-#   - 'alexeiled/secrets-init:v{{ .Major }}.{{ .Minor }}'
-#   - 'alexeiled/secrets-init:latest'
-#   binaries:
-#   - secrets-init
-#   build_flag_templates:
-#   - "--label=org.label-schema.schema-version=1.0"
-#   - "--label=org.label-schema.version={{.Version}}"
-#   - "--label=org.label-schema.name={{.ProjectName}}"
+dockers:
+- image_templates:
+  - 'doitintl/secrets-init:{{ .Tag }}'
+  - 'doitintl/secrets-init:v{{ .Major }}.{{ .Minor }}'
+  - 'doitintl/secrets-init:latest'
+  binaries:
+  - secrets-init
+  build_flag_templates:
+  - "--label=org.label-schema.schema-version=1.0"
+  - "--label=org.label-schema.version={{.Version}}"
+  - "--label=org.label-schema.name={{.ProjectName}}"
 
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
