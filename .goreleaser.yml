@@ -4,6 +4,7 @@ env:
 before:
   hooks:
    - go mod download
+   - echo {{ .Env.DOCKER_TOKEN }} | docker login -u {{ .Env.DOCKER_USERNAME }} --password-stdin {{ .Env.DOCKER_REGISTRY }}
 
 builds:
 - env:
@@ -34,9 +35,9 @@ release:
 
 dockers:
 - image_templates:
-  - 'doitintl/secrets-init:{{ .Tag }}'
-  - 'doitintl/secrets-init:v{{ .Major }}.{{ .Minor }}'
-  - 'doitintl/secrets-init:latest'
+  - '{{ .Env.DOCKER_ORG }}/secrets-init:{{ .Tag }}'
+  - '{{ .Env.DOCKER_ORG }}/secrets-init:v{{ .Major }}.{{ .Minor }}'
+  - '{{ .Env.DOCKER_ORG }}/secrets-init:latest'
   binaries:
   - secrets-init
   build_flag_templates:
