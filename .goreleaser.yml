@@ -4,7 +4,7 @@ env:
 before:
   hooks:
    - go mod download
-   - echo {{ .Env.DOCKER_TOKEN }} | docker login -u {{ .Env.DOCKER_USERNAME }} --password-stdin {{ .Env.DOCKER_REGISTRY }}
+   - docker login -u {{ .Env.DOCKER_USERNAME }} -p {{ .Env.DOCKER_TOKEN }} {{ .Env.DOCKER_REGISTRY }}
 
 builds:
 - env:
