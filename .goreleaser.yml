@@ -37,6 +37,7 @@ dockers:
 - image_templates:
   - '{{ .Env.DOCKER_ORG }}/secrets-init:{{ .Tag }}'
   - '{{ .Env.DOCKER_ORG }}/secrets-init:v{{ .Major }}.{{ .Minor }}'
+  - '{{ .Env.DOCKER_ORG }}/secrets-init:v{{ .Major }}.{{ .Minor }}.{{ .Patch }}'
   - '{{ .Env.DOCKER_ORG }}/secrets-init:latest'
   binaries:
   - secrets-init
@@ -44,6 +45,9 @@ dockers:
   - "--label=org.label-schema.schema-version=1.0"
   - "--label=org.label-schema.version={{.Version}}"
   - "--label=org.label-schema.name={{.ProjectName}}"
+  - "--label=org.label-schema.vcs-ref={{.ShortCommit}}"
+  - "--label=org.label-schema.vcs-url={{.GitURL}}"
+  - "--label=org.label-schema.build-date={{.Date}}"
 
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
