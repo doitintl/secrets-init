@@ -1,3 +1,7 @@
+[![Build Status](https://github.com/doitintl/secrets-init/workflows/goreleaser/badge.svg)](https://github.com/doitintl/secrets-init/actions?query=workflow%3Agoreleaser) [![Go Report Card](https://goreportcard.com/badge/github.com/doitintl/secrets-init)](https://goreportcard.com/report/github.com/doitintl/secrets-init)
+
+[![](https://images.microbadger.com/badges/image/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init) [![](https://images.microbadger.com/badges/version/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init) [![](https://images.microbadger.com/badges/commit/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init)
+
 # secrets-init
 
 `secrets-init` is a minimalistic init system designed to run as PID 1 inside container environments, similar to [dumb-init](https://github.com/Yelp/dumb-init), integrated with [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) and [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) services.
