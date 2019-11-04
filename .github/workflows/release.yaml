@@ -23,7 +23,7 @@ jobs:
           args: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCKER_TOKEN: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
           DOCKER_USERNAME: 'alexeiled'
           DOCKER_REGISTRY: 'index.docker.io'
           DOCKER_ORG: 'doitintl'
