@@ -1,7 +1,23 @@
+# code coverage
+.cover
+
+# git repo
+.git
+
+# IDE customization
+.idea
 .vscode
 
-# ignore binary
-secrets-init
+# binaries
+.bin
 
-# ignore goreleaser binaries
-dist/
+# env customization
+.env
+
+# goreleaser binaries
+dist
+
+# temporary
+**/.DS_Store
+**/debug
+**/debug.test

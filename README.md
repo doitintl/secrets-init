@@ -4,7 +4,11 @@
 
 # secrets-init
 
-`secrets-init` is a minimalistic init system designed to run as PID 1 inside container environments, similar to [dumb-init](https://github.com/Yelp/dumb-init), integrated with [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) and [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) services.
+`secrets-init` is a minimalistic init system designed to run as PID 1 inside container environments, similar to [dumb-init](https://github.com/Yelp/dumb-init), integrated with multiple secrets manager services:
+
+- [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/)
+- [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)
+- [Google Secret Manager](https://cloud.google.com/secret-manager/docs/)
 
 ## Why you need an init system
 
@@ -23,7 +27,7 @@ Summary:
 
 ### Integration with AWS Secrets Manager
 
-User can put AWS secret ARN as environment variable value. The `secrets-manager` will resolve any environment value, using specified ARN, to referenced secret value.
+User can put AWS secret ARN as environment variable value. The `secrets-init` will resolve any environment value, using specified ARN, to referenced secret value.
 
 ```sh
 # environment variable passed to `secrets-init`
@@ -37,7 +41,7 @@ MY_DB_PASSWORD=very-secret-password
 
 It is possible to use AWS Systems Manager Parameter Store to store application parameters and secrets.
 
-User can put AWS Parameter Store ARN as environment variable value. The `secrets-manager` will resolve any environment value, using specified ARN, to referenced parameter value.
+User can put AWS Parameter Store ARN as environment variable value. The `secrets-init` will resolve any environment value, using specified ARN, to referenced parameter value.
 
 ```sh
 # environment variable passed to `secrets-init`
@@ -45,6 +49,20 @@ MY_API_KEY=arn:aws:ssm:$AWS_REGION:$AWS_ACCOUNT_ID:parameter/api/key
 
 # environment variable passed to child process, resolved by `secrets-init`
 MY_API_KEY=key-123456789
+```
+
+### Integration with Google Secret Manager
+
+User can put Google secret name (prefixed with `gcp:secretmanager:`) as environment variable value. The `secrets-init` will resolve any environment value, using specified name, to referenced secret value.
+
+```sh
+# environment variable passed to `secrets-init`
+MY_DB_PASSWORD=gcp:secretmanager:projects/$PROJECT_ID/secrets/mydbpassword
+# OR versioned secret (with version or 'latest')
+MY_DB_PASSWORD=gcp:secretmanager:projects/$PROJECT_ID/secrets/mydbpassword/versions/2
+
+# environment variable passed to child process, resolved by `secrets-init`
+MY_DB_PASSWORD=very-secret-password
 ```
 
 ### Requirement

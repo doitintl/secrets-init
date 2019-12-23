@@ -2,57 +2,80 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"os/signal"
-	"strings"
+	"runtime"
+	"secrets-init/pkg/secrets"
+	"secrets-init/pkg/secrets/aws"
+	"secrets-init/pkg/secrets/google"
 	"sync"
 	"syscall"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/secretsmanager"
-	"github.com/aws/aws-sdk-go/service/ssm"
+	log "github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
 )
 
 var (
-	versionString = "0.1.4"
+	// Version contains the current version.
+	Version = "dev"
+	// BuildDate contains a string with the build date.
+	BuildDate = "unknown"
 )
 
 func main() {
-	var version bool
-
-	flag.BoolVar(&version, "version", false, "display version")
-	flag.Parse()
-
-	if version {
-		fmt.Println(versionString)
-		os.Exit(0)
+	app := &cli.App{
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "provider, p",
+				Usage: "supported secrets manager provider ['aws', 'google']",
+				Value: "aws",
+			},
+		},
+		Name:    "secrets-init",
+		Usage:   "enrich environment variables with secrets from secret manager",
+		Action:  mainCmd,
+		Version: Version,
+	}
+	cli.VersionPrinter = func(c *cli.Context) {
+		fmt.Printf("secrets-init %s\n", Version)
+		fmt.Printf("  build date: %s\n", BuildDate)
+		fmt.Printf("  built with: %s\n", runtime.Version())
 	}
 
-	if len(flag.Args()) == 0 {
-		log.Fatal("[secrets-init] no command defined, exiting")
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
 	}
+}
 
+func mainCmd(c *cli.Context) error {
 	// Routine to reap zombies (it's the job of init)
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go removeZombies(ctx, &wg)
 
+	// get provider
+	var provider secrets.Provider
+	if c.String("provider") == "aws" {
+		provider = new(aws.SecretsProvider)
+	} else if c.String("provider") == "google" {
+		provider = new(google.SecretsProvider)
+	}
 	// Launch main command
 	var mainRC int
-	err := run(flag.Args())
+	err := run(ctx, provider, c.Args().Slice())
 	if err != nil {
-		log.Fatalf("[secrets-init] command failed: %s\n", err)
+		log.WithError(err).Error("failed to run")
 		mainRC = 1
 	}
 
 	// Wait removeZombies goroutine
 	cleanQuit(cancel, &wg, mainRC)
+	return nil
 }
 
 func removeZombies(ctx context.Context, wg *sync.WaitGroup) {
@@ -81,64 +104,8 @@ func removeZombies(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-// resolve secrets against AWS Secret Manager and AWS SSM Parameter Store
-// replace all ENV variables values prefixed with 'aws:aws:secretsmanager' and 'arn:aws:ssm:REGION:ACCOUNT:parameter'
-// by corresponding secrets from AWS Secret Manager and AWS Parameter Store
-func resolveSecrets() []string {
-	var envs []string
-	var s *session.Session
-	var sm *secretsmanager.SecretsManager
-	var ssmsvc *ssm.SSM
-
-	for _, env := range os.Environ() {
-		kv := strings.Split(env, "=")
-		key, value := kv[0], kv[1]
-		if strings.HasPrefix(value, "arn:aws:secretsmanager") {
-			// create AWS API session, if needed
-			if s == nil {
-				s = session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
-			}
-			// create AWS secret manager, if needed
-			if sm == nil {
-				sm = secretsmanager.New(s)
-			}
-			// get secret value
-			secret, err := sm.GetSecretValue(&secretsmanager.GetSecretValueInput{SecretId: &value})
-			if err == nil {
-				env = key + "=" + *secret.SecretString
-			}
-		} else if strings.HasPrefix(value, "arn:aws:ssm") && strings.Contains(value, ":parameter/") {
-			tokens := strings.Split(value, ":")
-			// valid parameter ARN arn:aws:ssm:REGION:ACCOUNT:parameter/PATH
-			if len(tokens) == 6 {
-				// get SSM parameter name (path)
-				paramName := strings.TrimPrefix(tokens[5], "parameter")
-				// create AWS API session, if needed
-				if s == nil {
-					s = session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
-				}
-				// create SSM service, if needed
-				if ssmsvc == nil {
-					ssmsvc = ssm.New(s)
-				}
-				withDecryption := true
-				param, err := ssmsvc.GetParameter(&ssm.GetParameterInput{
-					Name:           &paramName,
-					WithDecryption: &withDecryption,
-				})
-				if err == nil {
-					env = key + "=" + *param.Parameter.Value
-				}
-			}
-		}
-		envs = append(envs, env)
-	}
-
-	return envs
-}
-
 // run passed command
-func run(commandSlice []string) error {
+func run(ctx context.Context, provider secrets.Provider, commandSlice []string) error {
 	var commandStr string
 	var argsSlice []string
 
@@ -163,7 +130,7 @@ func run(commandSlice []string) error {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// set environment variables
-	cmd.Env = resolveSecrets()
+	cmd.Env = provider.ResolveSecrets(ctx, os.Environ())
 
 	// Goroutine for signals forwarding
 	go func() {
