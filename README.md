@@ -67,9 +67,17 @@ MY_DB_PASSWORD=very-secret-password
 
 ### Requirement
 
-In order to resolve AWS secrets from AWS Secret Manager and Parameter Store, `secrets-init` should run under IAM role that has permission to access desired secrets.
+#### AWS
+
+In order to resolve AWS secrets from AWS Secrets Manager and Parameter Store, `secrets-init` should run under IAM role that has permission to access desired secrets.
 
 This can be achieved by assigning IAM Role to Kubernetes Pod or ECS Task. It's possible to assign IAM Role to EC2 instance, where container is running, but this option is less secure.
+
+#### Google Cloud
+
+In order to resolve Google secrets from Google Secret Manager, `secrets-init` should run under IAM role that has permission to access desired secrets.
+
+This can be achieved by assigning IAM Role to Kubernetes Pod with [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity). It's possible to assign IAM Role to GCE instance, where container is running, but this option is less secure.
 
 ## Code Reference
 
