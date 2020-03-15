@@ -79,6 +79,10 @@ In order to resolve Google secrets from Google Secret Manager, `secrets-init` sh
 
 This can be achieved by assigning IAM Role to Kubernetes Pod with [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity). It's possible to assign IAM Role to GCE instance, where container is running, but this option is less secure.
 
+## Kubernetes `secrets-init` admission webhook
+
+The [kube-secrets-init](https://github.com/doitintl/kube-secrets-init) implements Kubernetes [admission webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks) that injects `secrets-init` [initContainer](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) into any Pod that references cloud secrets (AWS Secrets Manager, AWS SSM Parameter Store and Google Secrets Manager) implicitly or explicitly.
+
 ## Code Reference
 
 Initial init system code was copied from [go-init](https://github.com/pablo-ruth/go-init) project.
