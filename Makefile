@@ -7,6 +7,8 @@ TESTPKGS = $(shell env GO111MODULE=on $(GO) list -f \
 			'{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' \
 			$(PKGS))
 BIN      = $(CURDIR)/.bin
+GOLANGCI_LINT_CONFIG = $(CURDIR)/.golangci.yaml
+
 
 GO      = go
 TIMEOUT = 15
@@ -35,8 +37,8 @@ $(BIN)/%: | $(BIN) ; $(info $(M) building $(PACKAGE)…)
 		|| ret=$$?; \
 	   rm -rf $$tmp ; exit $$ret
 
-GOLINT = $(BIN)/golint
-$(BIN)/golint: PACKAGE=golang.org/x/lint/golint
+GOLANGCI_LINT = $(BIN)/golangci-lint
+$(BIN)/golangci-lint: PACKAGE=github.com/golangci/golangci-lint/cmd/golangci-lint
 
 GOCOV = $(BIN)/gocov
 $(BIN)/gocov: PACKAGE=github.com/axw/gocov/...
@@ -60,7 +62,7 @@ test-verbose: ARGS=-v            ## Run tests in verbose mode with coverage repo
 test-race:    ARGS=-race         ## Run tests with race detector
 $(TEST_TARGETS): NAME=$(MAKECMDGOALS:test-%=%)
 $(TEST_TARGETS): test
-check test tests: fmt lint ; $(info $(M) running $(NAME:%=% )tests…) @ ## Run tests
+check test tests: fmt ; $(info $(M) running $(NAME:%=% )tests…) @ ## Run tests
 	$Q $(GO) test -timeout $(TIMEOUT)s $(ARGS) $(TESTPKGS)
 
 test-xml: fmt lint | $(GO2XUNIT) ; $(info $(M) running xUnit tests…) @ ## Run tests with xUnit output
@@ -87,8 +89,9 @@ test-coverage: fmt lint test-coverage-tools ; $(info $(M) running coverage tests
 	$Q $(GOCOV) convert $(COVERAGE_PROFILE) | $(GOCOVXML) > $(COVERAGE_XML)
 
 .PHONY: lint
-lint: | $(GOLINT) ; $(info $(M) running golint…) @ ## Run golint
-	$Q $(GOLINT) -set_exit_status $(PKGS)
+lint: | $(GOLANGCI_LINT) ; $(info $(M) running golangci-lint…) @ ## Run golangci-lint
+	$Q $(GOLANGCI_LINT) run -v -c $(GOLANGCI_LINT_CONFIG) .
+
 
 .PHONY: fmt
 fmt: ; $(info $(M) running gofmt…) @ ## Run gofmt on all source files
@@ -99,6 +102,7 @@ mock: | $(GOMOCK) ; $(info $(M) generating mocks…) @ ## Run mockery
 	$Q $(GO) mod vendor -v
 	$Q $(GOMOCK) -name SecretsManagerAPI -dir vendor/github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface
 	$Q $(GOMOCK) -name SSMAPI -dir vendor/github.com/aws/aws-sdk-go/service/ssm/ssmiface
+	$Q $(GOMOCK) -name GoogleSecretsManagerAPI -dir pkg/secrets/google
 	$Q rm -rf vendor
 
 # Misc

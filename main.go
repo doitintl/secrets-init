@@ -70,7 +70,7 @@ func mainCmd(c *cli.Context) error {
 	if c.String("provider") == "aws" {
 		provider, err = aws.NewAwsSecretsProvider()
 	} else if c.String("provider") == "google" {
-		provider, err = google.NewGoogleSecretsProvider()
+		provider, err = google.NewGoogleSecretsProvider(ctx)
 	}
 	if err != nil {
 		log.WithField("provider", c.String("provider")).WithError(err).Error("failed to initialize secrets provider")
@@ -149,10 +149,15 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 	// Goroutine for signals forwarding
 	go func() {
 		for sig := range sigs {
-			// ignore SIGCHLD signals since these are only usefull for secrets-init
+			// ignore SIGCHLD signals since these are only useful for secrets-init
 			if sig != syscall.SIGCHLD {
 				// forward signal to the main process and its children
-				syscall.Kill(-cmd.Process.Pid, sig.(syscall.Signal))
+				e := syscall.Kill(-cmd.Process.Pid, sig.(syscall.Signal))
+				log.WithFields(log.Fields{
+					"pid":  cmd.Process.Pid,
+					"path": cmd.Path,
+					"args": cmd.Args,
+				}).WithError(e).Error("failed to kill process")
 			}
 		}
 	}()

@@ -11,11 +11,18 @@ import (
 )
 
 // SecretsProvider Google Cloud secrets provider
-type SecretsProvider struct{}
+type SecretsProvider struct {
+	sm GoogleSecretsManagerAPI
+}
 
 // NewGoogleSecretsProvider init Google Secrets Provider
-func NewGoogleSecretsProvider() (secrets.Provider, error) {
+func NewGoogleSecretsProvider(ctx context.Context) (secrets.Provider, error) {
 	sp := SecretsProvider{}
+	var err error
+	sp.sm, err = secretmanager.NewClient(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to initialize Google Cloud SDK")
+	}
 	return &sp, nil
 }
 
@@ -26,18 +33,10 @@ func NewGoogleSecretsProvider() (secrets.Provider, error) {
 //    `gcp:secretmanager:projects/{PROJECT_ID}/secrets/{SECRET_NAME}/versions/{VERSION|latest}`
 func (sp SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([]string, error) {
 	var envs []string
-	var sm *secretmanager.Client
-	var err error
 	for _, env := range vars {
 		kv := strings.Split(env, "=")
 		key, value := kv[0], kv[1]
 		if strings.HasPrefix(value, "gcp:secretmanager:") {
-			if sm == nil {
-				sm, err = secretmanager.NewClient(ctx)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to initialize Google Cloud SDK")
-				}
-			}
 			// construct valid secret name
 			name := strings.TrimPrefix(value, "gcp:secretmanager:")
 			// if no version specified add latest
@@ -48,9 +47,9 @@ func (sp SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([]
 			req := &secretspb.AccessSecretVersionRequest{
 				Name: name,
 			}
-			secret, err := sm.AccessSecretVersion(ctx, req)
+			secret, err := sp.sm.AccessSecretVersion(ctx, req)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to get secret from Google Secret Manager")
+				return vars, errors.Wrap(err, "failed to get secret from Google Secret Manager")
 			}
 			env = key + "=" + string(secret.Payload.GetData())
 		}
