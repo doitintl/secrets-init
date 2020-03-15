@@ -66,14 +66,18 @@ func mainCmd(c *cli.Context) error {
 
 	// get provider
 	var provider secrets.Provider
+	var err error
 	if c.String("provider") == "aws" {
-		provider = new(aws.SecretsProvider)
+		provider, err = aws.NewAwsSecretsProvider()
 	} else if c.String("provider") == "google" {
-		provider = new(google.SecretsProvider)
+		provider, err = google.NewGoogleSecretsProvider()
+	}
+	if err != nil {
+		log.WithField("provider", c.String("provider")).WithError(err).Error("failed to initialize secrets provider")
 	}
 	// Launch main command
 	var mainRC int
-	err := run(ctx, provider, c.Args().Slice())
+	err = run(ctx, provider, c.Args().Slice())
 	if err != nil {
 		log.WithError(err).Error("failed to run")
 		mainRC = 1
@@ -136,7 +140,11 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// set environment variables
-	cmd.Env = provider.ResolveSecrets(ctx, os.Environ())
+	var err error
+	cmd.Env, err = provider.ResolveSecrets(ctx, os.Environ())
+	if err != nil {
+		log.WithError(err).Error("failed to resolve secrets")
+	}
 
 	// Goroutine for signals forwarding
 	go func() {
@@ -150,14 +158,21 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 	}()
 
 	// start the specified command
-	err := cmd.Start()
+	log.WithFields(log.Fields{
+		"command": commandStr,
+		"args":    argsSlice,
+		"env":     cmd.Env,
+	}).Debug("starting command")
+	err = cmd.Start()
 	if err != nil {
+		log.WithError(err).Error("failed to start command")
 		return err
 	}
 
 	// wait for the command to exit
 	err = cmd.Wait()
 	if err != nil {
+		log.WithError(err).Error("failed to wait for command to complete")
 		return err
 	}
 

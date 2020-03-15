@@ -19,7 +19,7 @@ export CGO_ENABLED=0
 export GOPROXY=https://proxy.golang.org
 
 .PHONY: all
-all: fmt lint | $(BIN) ; $(info $(M) building executable…) @ ## Build program binary
+all: fmt lint test | $(BIN) ; $(info $(M) building executable…) @ ## Build program binary
 	$Q $(GO) build \
 		-tags release \
 		-ldflags '-X main.Version=$(VERSION) -X main.BuildDate=$(DATE)' \
@@ -46,6 +46,9 @@ $(BIN)/gocov-xml: PACKAGE=github.com/AlekSi/gocov-xml
 
 GO2XUNIT = $(BIN)/go2xunit
 $(BIN)/go2xunit: PACKAGE=github.com/tebeka/go2xunit
+
+GOMOCK = $(BIN)/mockery
+$(BIN)/mockery: PACKAGE=github.com/vektra/mockery/.../
 
 # Tests
 
@@ -90,6 +93,13 @@ lint: | $(GOLINT) ; $(info $(M) running golint…) @ ## Run golint
 .PHONY: fmt
 fmt: ; $(info $(M) running gofmt…) @ ## Run gofmt on all source files
 	$Q $(GO) fmt $(PKGS)
+
+.PHONY: mock
+mock: | $(GOMOCK) ; $(info $(M) generating mocks…) @ ## Run mockery
+	$Q $(GO) mod vendor -v
+	$Q $(GOMOCK) -name SecretsManagerAPI -dir vendor/github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface
+	$Q $(GOMOCK) -name SSMAPI -dir vendor/github.com/aws/aws-sdk-go/service/ssm/ssmiface
+	$Q rm -rf vendor
 
 # Misc
 

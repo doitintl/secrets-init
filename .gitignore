@@ -17,6 +17,9 @@
 # goreleaser binaries
 dist
 
+# vendor
+vendor
+
 # temporary
 **/.DS_Store
 **/debug
