@@ -146,6 +146,18 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 		log.WithError(err).Error("failed to resolve secrets")
 	}
 
+	// start the specified command
+	log.WithFields(log.Fields{
+		"command": commandStr,
+		"args":    argsSlice,
+		"env":     cmd.Env,
+	}).Debug("starting command")
+	err = cmd.Start()
+	if err != nil {
+		log.WithError(err).Error("failed to start command")
+		return err
+	}
+
 	// Goroutine for signals forwarding
 	go func() {
 		for sig := range sigs {
@@ -161,18 +173,6 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 			}
 		}
 	}()
-
-	// start the specified command
-	log.WithFields(log.Fields{
-		"command": commandStr,
-		"args":    argsSlice,
-		"env":     cmd.Env,
-	}).Debug("starting command")
-	err = cmd.Start()
-	if err != nil {
-		log.WithError(err).Error("failed to start command")
-		return err
-	}
 
 	// wait for the command to exit
 	err = cmd.Wait()
