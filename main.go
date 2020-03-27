@@ -165,11 +165,14 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 			if sig != syscall.SIGCHLD {
 				// forward signal to the main process and its children
 				e := syscall.Kill(-cmd.Process.Pid, sig.(syscall.Signal))
-				log.WithFields(log.Fields{
-					"pid":  cmd.Process.Pid,
-					"path": cmd.Path,
-					"args": cmd.Args,
-				}).WithError(e).Error("failed to kill process")
+				if e != nil {
+					log.WithFields(log.Fields{
+						"pid":    cmd.Process.Pid,
+						"path":   cmd.Path,
+						"args":   cmd.Args,
+						"signal": sig,
+					}).WithError(e).Error("failed to send system signal to the process")
+				}
 			}
 		}
 	}()
