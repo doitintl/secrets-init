@@ -16,6 +16,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -119,6 +120,11 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 	var commandStr string
 	var argsSlice []string
 
+	if len(commandSlice) == 0 {
+		log.Warn("no command specified")
+		return nil
+	}
+
 	// split command and arguments
 	commandStr = commandSlice[0]
 	// if there is args
@@ -170,7 +176,7 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 						"pid":    cmd.Process.Pid,
 						"path":   cmd.Path,
 						"args":   cmd.Args,
-						"signal": sig,
+						"signal": unix.SignalName(sig.(syscall.Signal)),
 					}).WithError(e).Error("failed to send system signal to the process")
 				}
 			}
