@@ -8,7 +8,7 @@ import (
 	"secrets-init/pkg/secrets"
 	"testing"
 
-	secretspb "google.golang.org/genproto/googleapis/cloud/secrets/v1beta1"
+	secretspb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 func TestSecretsProvider_ResolveSecrets(t *testing.T) {

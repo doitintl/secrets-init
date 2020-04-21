@@ -5,9 +5,9 @@ import (
 	"secrets-init/pkg/secrets"
 	"strings"
 
-	secretmanager "cloud.google.com/go/secretmanager/apiv1beta1"
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/pkg/errors"
-	secretspb "google.golang.org/genproto/googleapis/cloud/secrets/v1beta1"
+	secretspb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 // SecretsProvider Google Cloud secrets provider
