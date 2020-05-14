@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/googleapis/gax-go/v2"
-	secretspb "google.golang.org/genproto/googleapis/cloud/secrets/v1beta1"
+	secretspb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 type GoogleSecretsManagerAPI interface {
