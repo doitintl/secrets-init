@@ -26,7 +26,7 @@ func NewGoogleSecretsProvider(ctx context.Context) (secrets.Provider, error) {
 	return &sp, nil
 }
 
-// ResolveSecrets replaces all passed variables values prefixed with 'gsp:secretsmanager'
+// ResolveSecrets replaces all passed variables values prefixed with 'gsp:secretmanager'
 // by corresponding secrets from Google Secret Manager
 // The secret name should be in the format (optionally with version)
 //    `gcp:secretmanager:projects/{PROJECT_ID}/secrets/{SECRET_NAME}`
@@ -41,7 +41,7 @@ func (sp SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([]
 			name := strings.TrimPrefix(value, "gcp:secretmanager:")
 			// if no version specified add latest
 			if !strings.Contains(name, "/versions/") {
-				name = name + "/versions/latest"
+				name += "/versions/latest"
 			}
 			// get secret value
 			req := &secretspb.AccessSecretVersionRequest{

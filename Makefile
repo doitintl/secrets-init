@@ -11,6 +11,7 @@ GOLANGCI_LINT_CONFIG = $(CURDIR)/.golangci.yaml
 
 
 GO      = go
+GOLANGCI_LINT = golangci-lint
 TIMEOUT = 15
 V = 0
 Q = $(if $(filter 1,$V),,@)
@@ -36,9 +37,6 @@ $(BIN)/%: | $(BIN) ; $(info $(M) building $(PACKAGE)…)
 	   env GO111MODULE=off GOPATH=$$tmp GOBIN=$(BIN) $(GO) get $(PACKAGE) \
 		|| ret=$$?; \
 	   rm -rf $$tmp ; exit $$ret
-
-GOLANGCI_LINT = $(BIN)/golangci-lint
-$(BIN)/golangci-lint: PACKAGE=github.com/golangci/golangci-lint/cmd/golangci-lint
 
 GOCOV = $(BIN)/gocov
 $(BIN)/gocov: PACKAGE=github.com/axw/gocov/...
@@ -89,9 +87,8 @@ test-coverage: fmt lint test-coverage-tools ; $(info $(M) running coverage tests
 	$Q $(GOCOV) convert $(COVERAGE_PROFILE) | $(GOCOVXML) > $(COVERAGE_XML)
 
 .PHONY: lint
-lint: | $(GOLANGCI_LINT) ; $(info $(M) running golangci-lint…) @ ## Run golangci-lint
-	$Q $(GOLANGCI_LINT) run -v -c $(GOLANGCI_LINT_CONFIG) .
-
+lint: ; $(info $(M) running golangci-lint) @ ## Run golangci-lint
+	$Q $(GOLANGCI_LINT) run --timeout=5m -v -c $(GOLANGCI_LINT_CONFIG) ./...
 
 .PHONY: fmt
 fmt: ; $(info $(M) running gofmt…) @ ## Run gofmt on all source files
