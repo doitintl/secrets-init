@@ -46,6 +46,8 @@ User can put AWS Parameter Store ARN as environment variable value. The `secrets
 ```sh
 # environment variable passed to `secrets-init`
 MY_API_KEY=arn:aws:ssm:$AWS_REGION:$AWS_ACCOUNT_ID:parameter/api/key
+# OR versioned parameter
+MY_API_KEY=arn:aws:ssm:$AWS_REGION:$AWS_ACCOUNT_ID:parameter/api/key:$VERSION
 
 # environment variable passed to child process, resolved by `secrets-init`
 MY_API_KEY=key-123456789
