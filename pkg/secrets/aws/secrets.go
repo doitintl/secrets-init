@@ -54,9 +54,15 @@ func (sp *SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([
 		} else if strings.HasPrefix(value, "arn:aws:ssm") && strings.Contains(value, ":parameter/") {
 			tokens := strings.Split(value, ":")
 			// valid parameter ARN arn:aws:ssm:REGION:ACCOUNT:parameter/PATH
-			if len(tokens) == 6 {
+			// or arn:aws:ssm:REGION:ACCOUNT:parameter/PATH:VERSION
+			if len(tokens) == 6 || len(tokens) == 7 {
 				// get SSM parameter name (path)
 				paramName := strings.TrimPrefix(tokens[5], "parameter")
+
+				if len(tokens) == 7 {
+					paramName = strings.Join([]string{paramName, tokens[6]}, ":")
+				}
+
 				// get AWS SSM API
 				withDecryption := true
 				param, err := sp.ssm.GetParameter(&ssm.GetParameterInput{
