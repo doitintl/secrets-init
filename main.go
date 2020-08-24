@@ -145,11 +145,16 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 	// create a dedicated pidgroup used to forward signals to the main process and its children
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	// set environment variables
 	var err error
-	cmd.Env, err = provider.ResolveSecrets(ctx, os.Environ())
-	if err != nil {
-		log.WithError(err).Error("failed to resolve secrets")
+	// set environment variables
+	if provider != nil {
+		cmd.Env, err = provider.ResolveSecrets(ctx, os.Environ())
+		if err != nil {
+			log.WithError(err).Error("failed to resolve secrets")
+		}
+	} else {
+		log.Warn("no secrets provider available; using environment without resolving secrets")
+		cmd.Env = os.Environ()
 	}
 
 	// start the specified command
