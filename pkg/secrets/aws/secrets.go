@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/pkg/errors"
+	"encoding/json"
+	"github.com/tidwall/gjson"
 )
 
 // SecretsProvider AWS secrets provider
@@ -18,6 +20,11 @@ type SecretsProvider struct {
 	session *session.Session
 	sm      secretsmanageriface.SecretsManagerAPI
 	ssm     ssmiface.SSMAPI
+}
+
+func isJSON(s string) bool {
+	var js map[string]interface{}
+	return json.Unmarshal([]byte(s), &js) == nil
 }
 
 // NewAwsSecretsProvider init AWS Secrets Provider
@@ -45,12 +52,20 @@ func (sp *SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([
 		kv := strings.Split(env, "=")
 		key, value := kv[0], kv[1]
 		if strings.HasPrefix(value, "arn:aws:secretsmanager") {
+			vals := strings.Split(value, "#")
+			value = vals[0] // secret ARN
+			k := vals[len(vals)-1] // key to extract from SecretString
 			// get secret value
 			secret, err := sp.sm.GetSecretValue(&secretsmanager.GetSecretValueInput{SecretId: &value})
 			if err != nil {
 				return vars, errors.Wrap(err, "failed to get secret from AWS Secrets Manager")
 			}
-			env = key + "=" + *secret.SecretString
+			if isJSON(*secret.SecretString) {
+				v := gjson.Get(*secret.SecretString, k)
+				env = key + "=" + v.String()
+			} else {
+				env = key + "=" + *secret.SecretString
+			}
 		} else if strings.HasPrefix(value, "arn:aws:ssm") && strings.Contains(value, ":parameter/") {
 			tokens := strings.Split(value, ":")
 			// valid parameter ARN arn:aws:ssm:REGION:ACCOUNT:parameter/PATH
