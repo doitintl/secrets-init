@@ -128,7 +128,7 @@ changelog: ; $(info $(M) generating changelog...)	@ ## Generating CAHNGELOG.md
 ifndef GITHUB_TOKEN
 	$(error GITHUB_TOKEN is undefined)
 endif
-	$Q $(DOCKER) run -it --rm \
+	$Q $(DOCKER) run --rm \
 		-v $(CURDIR):/usr/local/src/app \
 		-w /usr/local/src/app ferrarimarco/github-changelog-generator \
 		--user doitintl --project secrets-init \
