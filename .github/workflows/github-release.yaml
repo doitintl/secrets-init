@@ -28,6 +28,11 @@ jobs:
         run: |
           make platfrom-build
 
+      - name: Generate Changelog
+        uses: heinrichreimer/github-changelog-generator-action@v2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Release to GitHub
         if: startsWith(github.ref, 'refs/tags/')
         uses: anton-yurchenko/git-release@v3.4.4
