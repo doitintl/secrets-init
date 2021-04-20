@@ -14,8 +14,8 @@
 # env customization
 .env
 
-# goreleaser binaries
-dist
+# changelog
+CHANGELOG.md
 
 # vendor
 vendor

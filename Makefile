@@ -14,6 +14,7 @@ ARCHITECTURES = amd64 arm64
 TARGETOS   ?= $(GOOS)
 TARGETARCH ?= $(GOARCH)
 
+DOCKER  = docker
 GO      = go
 TIMEOUT = 15
 V = 0
@@ -120,6 +121,18 @@ mock: | $(GOMOCK) ; $(info $(M) generating mocks…) @ ## Run mockery
 	$Q rm -rf vendor
 
 # Misc
+
+# generate CHANGELOG.md changelog file
+.PHONY: changelog
+changelog: ; $(info $(M) generating changelog...)	@ ## Generating CAHNGELOG.md
+ifndef GITHUB_TOKEN
+	$(error GITHUB_TOKEN is undefined)
+endif
+	$Q $(DOCKER) run -it --rm \
+		-v $(CURDIR):/usr/local/src/app \
+		-w /usr/local/src/app ferrarimarco/github-changelog-generator \
+		--user doitintl --project secrets-init \
+		--token $(GITHUB_TOKEN)
 
 .PHONY: clean
 clean: ; $(info $(M) cleaning…)	@ ## Cleanup everything

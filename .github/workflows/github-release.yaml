@@ -27,15 +27,9 @@ jobs:
           make platfrom-build
 
       - name: Generate Changelog
-        uses: heinrichreimer/github-changelog-generator-action@v2.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Print Changelog
-        run: |
-          echo "Print CHANGELOG"
-          echo "==============="
-          cat ./CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make changelog
 
       - name: Release to GitHub
         if: startsWith(github.ref, 'refs/tags/')
@@ -43,7 +37,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DRAFT_RELEASE: "true"
-          CHANGELOG_FILE: "./CHANGELOG.md"
         with:
           args: |
             .bin/*
