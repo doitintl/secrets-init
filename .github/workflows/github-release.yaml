@@ -3,8 +3,6 @@ name: github
 on:
   workflow_dispatch:
   push:
-    branches:
-      - 'master'
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
     paths-ignore:
@@ -39,6 +37,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DRAFT_RELEASE: "true"
+          CHANGELOG_FILE: "${GITHUB_WORKSPACE}/CHANGELOG.md"
         with:
           args: |
             .bin/*
