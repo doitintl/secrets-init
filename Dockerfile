@@ -1,5 +1,32 @@
-FROM alpine:3.10
+FROM golang:1.16-alpine as builder
 
-ADD secrets-init /usr/local/bin/secrets-init
+# add CA certificates and TZ for local time
+RUN apk --update add ca-certificates tzdata make git
 
-CMD ["secrets-init", "--version"]
+# Create and change to the app directory.
+WORKDIR /app
+
+# Retrieve application dependencies.
+# This allows the container build to reuse cached dependencies.
+# Expecting to copy go.mod and if present go.sum.
+COPY go.* ./
+RUN go mod download
+
+# Copy local code to the container image.
+COPY . ./
+
+# Build the binary.
+RUN make
+
+# final image
+FROM scratch
+
+# copy the binary to the production image from the builder stage.
+COPY --from=builder /app/.bin/secrets-init /app/secrets-init
+# copy certificates
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+# copy timezone settings
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+
+ENTRYPOINT ["/app/secrets-init"]
+CMD ["--version"]

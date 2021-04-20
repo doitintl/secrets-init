@@ -7,11 +7,14 @@ TESTPKGS = $(shell env GO111MODULE=on $(GO) list -f \
 			'{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' \
 			$(PKGS))
 BIN      = $(CURDIR)/.bin
-GOLANGCI_LINT_CONFIG = $(CURDIR)/.golangci.yaml
-
+LDFLAGS_VERSION = -X main.Version=$(VERSION) -X main.BuildDate=$(DATE) -X main.GitCommit=$(COMMIT) -X main.GitBranch=$(BRANCH)
+LINT_CONFIG = $(CURDIR)/.golangci.yaml
+PLATFORMS     = darwin linux
+ARCHITECTURES = amd64 arm64
+TARGETOS   ?= $(GOOS)
+TARGETARCH ?= $(GOARCH)
 
 GO      = go
-GOLANGCI_LINT = golangci-lint
 TIMEOUT = 15
 V = 0
 Q = $(if $(filter 1,$V),,@)
@@ -23,32 +26,46 @@ export GOPROXY=https://proxy.golang.org
 
 .PHONY: all
 all: fmt lint test | $(BIN) ; $(info $(M) building executable…) @ ## Build program binary
-	$Q $(GO) build \
+	$Q env GOOS=$(TARGETOS) GOARCH=$(TARGETARCH) $(GO) build \
 		-tags release \
-		-ldflags '-X main.Version=$(VERSION) -X main.BuildDate=$(DATE)' \
+		-ldflags "$(LDFLAGS_VERSION)" \
 		-o $(BIN)/$(basename $(MODULE)) main.go
+
+# Release for multiple platforms
+
+.PHONY: platfrom-build
+platfrom-build: clean lint test ; $(info $(M) building binaries for multiple os/arch...) @ ## Build program binary for platforms and os
+	$(foreach GOOS, $(PLATFORMS),\
+		$(foreach GOARCH, $(ARCHITECTURES), \
+			$(shell \
+				GOPROXY=$(GOPROXY) CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) \
+				$(GO) build \
+				-tags release \
+				-ldflags "$(LDFLAGS_VERSION)" \
+				-o $(BIN)/$(basename $(MODULE))-$(GOOS)-$(GOARCH) main.go || true)))
 
 # Tools
 
-$(BIN):
-	@mkdir -p $@
-$(BIN)/%: | $(BIN) ; $(info $(M) building $(PACKAGE)…)
-	$Q tmp=$$(mktemp -d); \
-	   env GO111MODULE=off GOPATH=$$tmp GOBIN=$(BIN) $(GO) get $(PACKAGE) \
-		|| ret=$$?; \
-	   rm -rf $$tmp ; exit $$ret
+setup-tools: setup-lint setup-gocov setup-gocov-xml setup-go2xunit setup-mockery setup-ghr
 
-GOCOV = $(BIN)/gocov
-$(BIN)/gocov: PACKAGE=github.com/axw/gocov/...
+setup-lint:
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39
+setup-gocov:
+	$(GO) install github.com/axw/gocov/...
+setup-gocov-xml:
+	$(GO) install github.com/AlekSi/gocov-xml
+setup-go2xunit:
+	$(GO) install github.com/tebeka/go2xunit
+setup-mockery:
+	$(GO) install github.com/vektra/mockery/v2/
+setup-ghr:
+	$(GO) install github.com/tcnksm/ghr@v0.13.0
 
-GOCOVXML = $(BIN)/gocov-xml
-$(BIN)/gocov-xml: PACKAGE=github.com/AlekSi/gocov-xml
-
-GO2XUNIT = $(BIN)/go2xunit
-$(BIN)/go2xunit: PACKAGE=github.com/tebeka/go2xunit
-
-GOMOCK = $(BIN)/mockery
-$(BIN)/mockery: PACKAGE=github.com/vektra/mockery/.../
+GOLINT=golangci-lint
+GOCOV=gocov
+GOCOVXML=gocov-xml
+GO2XUNIT=go2xunit
+GOMOCK=mockery
 
 # Tests
 
@@ -87,8 +104,8 @@ test-coverage: fmt lint test-coverage-tools ; $(info $(M) running coverage tests
 	$Q $(GOCOV) convert $(COVERAGE_PROFILE) | $(GOCOVXML) > $(COVERAGE_XML)
 
 .PHONY: lint
-lint: ; $(info $(M) running golangci-lint) @ ## Run golangci-lint
-	$Q $(GOLANGCI_LINT) run --timeout=5m -v -c $(GOLANGCI_LINT_CONFIG) ./...
+lint: setup-lint ; $(info $(M) running golangci-lint) @ ## Run golangci-lint
+	$Q $(GOLINT) run --timeout=5m -v -c $(LINT_CONFIG) ./...
 
 .PHONY: fmt
 fmt: ; $(info $(M) running gofmt…) @ ## Run gofmt on all source files

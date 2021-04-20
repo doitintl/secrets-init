@@ -1,0 +1,36 @@
+name: test
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - '*'
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  pull_request:
+    branches:
+      - '*'
+env:
+  GOPROXY: https://proxy.golang.org
+  CGO_ENABLED: 0
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.x
+
+      - name: Lint
+        run: |
+          make lint
+
+      - name: Test
+        run: |
+          make test
