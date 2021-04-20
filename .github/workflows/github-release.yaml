@@ -1,4 +1,4 @@
-name: github-release
+name: github
 
 on:
   workflow_dispatch:

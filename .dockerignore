@@ -1,0 +1,26 @@
+# binaries
+.bin
+
+# coverage
+.cover
+
+# IDE
+.idea
+.vscode
+
+# CI/CD
+.github
+
+# helper files
+.gitignore
+*.todo
+
+# documentation
+*.md
+docs
+
+# customization and secrets
+.env
+
+# license
+LICENSE

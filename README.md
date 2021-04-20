@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/doitintl/secrets-init/workflows/goreleaser/badge.svg)](https://github.com/doitintl/secrets-init/actions?query=workflow%3Agoreleaser) [![Go Report Card](https://goreportcard.com/badge/github.com/doitintl/secrets-init)](https://goreportcard.com/report/github.com/doitintl/secrets-init)
+[![test](https://github.com/doitintl/secrets-init/actions/workflows/test.yaml/badge.svg)](https://github.com/doitintl/secrets-init/actions/workflows/test.yaml) [![Go Report Card](https://goreportcard.com/badge/github.com/doitintl/secrets-init)](https://goreportcard.com/report/github.com/doitintl/secrets-init)
 
 [![](https://images.microbadger.com/badges/image/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init) [![](https://images.microbadger.com/badges/version/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init) [![](https://images.microbadger.com/badges/commit/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init)
 
