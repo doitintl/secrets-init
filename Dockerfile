@@ -2,8 +2,12 @@
 
 FROM --platform=${BUILDPLATFORM} golang:1.16-alpine as builder
 
+# passed by buildkit
+ARG TARGETOS
+ARG TARGETARCH
+
 # add CA certificates and TZ for local time
-RUN apk --update add ca-certificates tzdata make git
+RUN apk --update add ca-certificates make git
 
 # Create and change to the app directory.
 RUN mkdir -p /go/src/app
@@ -20,17 +24,12 @@ RUN --mount=type=cache,target=/go/mod go mod download
 COPY . .
 
 # Build the binary.
-RUN make
+RUN --mount=type=cache,target=/root/.cache/go-build TARGETOS=${TARGETOS} TARGETARCH=${TARGETARCH} make
 
 # final image
-FROM scratch
+# keep it FROM alpine - need to copy secrets-init to target container
+FROM --platform=${TARGETPLATFORM} alpine:3.13
 
-# copy the binary to the production image from the builder stage.
-COPY --from=builder /go/src/app/.bin/secrets-init /secrets-init
-# copy certificates
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-# copy timezone settings
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /go/src/app/.bin/secrets-init /usr/local/bin/secrets-init
 
-ENTRYPOINT ["/secrets-init"]
-CMD ["--version"]
+CMD ["secrets-init", "--version"]
