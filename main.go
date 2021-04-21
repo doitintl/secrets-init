@@ -20,14 +20,16 @@ import (
 )
 
 var (
-	// Version contains the current version.
-	version = "dev"
-	// BuildDate contains a string with the build date.
-	date = "unknown"
-	// commit
-	commit = "dirty"
-	// buildBy
-	builtBy = "local"
+	// Version contains the current Version.
+	Version = "dev"
+	// BuildDate contains a string with the build BuildDate.
+	BuildDate = "unknown"
+	// GitCommit git commit sha
+	GitCommit = "dirty"
+	// GitBranch git branch
+	GitBranch = "dirty"
+	// Platform OS/ARCH
+	Platform = ""
 )
 
 func main() {
@@ -42,13 +44,14 @@ func main() {
 		Name:    "secrets-init",
 		Usage:   "enrich environment variables with secrets from secret manager",
 		Action:  mainCmd,
-		Version: version,
+		Version: Version,
 	}
 	cli.VersionPrinter = func(c *cli.Context) {
-		fmt.Printf("secrets-init %s\n", version)
-		fmt.Printf("  build date: %s\n", date)
-		fmt.Printf("  commit: %s\n", commit)
-		fmt.Printf("  built by: %s\n", builtBy)
+		fmt.Printf("version: %s\n", Version)
+		fmt.Printf("  build date: %s\n", BuildDate)
+		fmt.Printf("  commit: %s\n", GitCommit)
+		fmt.Printf("  branch: %s\n", GitBranch)
+		fmt.Printf("  platform: %s\n", Platform)
 		fmt.Printf("  built with: %s\n", runtime.Version())
 	}
 
