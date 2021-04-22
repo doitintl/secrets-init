@@ -14,7 +14,7 @@ PLATFORMS     = darwin linux
 ARCHITECTURES = amd64 arm64
 TARGETOS   ?= $(GOOS)
 TARGETARCH ?= $(GOARCH)
-LDFLAGS_VERSION = -X main.Version=$(VERSION) -X main.BuildDate=$(DATE) -X main.GitCommit=$(COMMIT) -X main.GitBranch=$(BRANCH)
+LDFLAGS_VERSION = -s -w -X main.Version=$(VERSION) -X main.BuildDate=$(DATE) -X main.GitCommit=$(COMMIT) -X main.GitBranch=$(BRANCH)
 
 DOCKER  = docker
 GO      = go

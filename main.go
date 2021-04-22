@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"secrets-init/pkg/secrets"
 	"secrets-init/pkg/secrets/aws"
@@ -41,6 +43,15 @@ func main() {
 				Value: "aws",
 			},
 		},
+		Commands: []*cli.Command{
+			{
+				Name:      "copy",
+				Aliases:   []string{"cp"},
+				Usage:     "copy itself to a destination folder",
+				ArgsUsage: "destination",
+				Action:    copyCmd,
+			},
+		},
 		Name:    "secrets-init",
 		Usage:   "enrich environment variables with secrets from secret manager",
 		Action:  mainCmd,
@@ -59,6 +70,43 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func copyCmd(c *cli.Context) error {
+	if c.Args().Len() != 1 {
+		return fmt.Errorf("must specify copy destination")
+	}
+	// full path of current executable
+	src := os.Args[0]
+	// destination path
+	dest := filepath.Join(c.Args().First(), filepath.Base(src))
+	// copy file with current file mode flags
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !sourceFileStat.Mode().IsRegular() {
+		return fmt.Errorf("%s is not a regular file", src)
+	}
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	srcInfo, err := source.Stat()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = source.Close() }()
+	destination, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = destination.Close() }()
+	_, err = io.Copy(destination, source)
+	if err != nil {
+		return err
+	}
+	return destination.Chmod(srcInfo.Mode())
 }
 
 func mainCmd(c *cli.Context) error {
