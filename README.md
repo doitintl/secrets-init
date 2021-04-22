@@ -2,6 +2,10 @@
 
 [![](https://images.microbadger.com/badges/image/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init) [![](https://images.microbadger.com/badges/version/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init) [![](https://images.microbadger.com/badges/commit/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init)
 
+## Blog Post
+
+[Kubernetes and Secrets Management in the Cloud](https://blog.doit-intl.com/kubernetes-and-secrets-management-in-cloud-858533c20dca?source=friends_link&sk=bb41e29ce4d082d6e69df38bb91244ef)
+
 # secrets-init
 
 `secrets-init` is a minimalistic init system designed to run as PID 1 inside container environments, similar to [dumb-init](https://github.com/Yelp/dumb-init), integrated with multiple secrets manager services:
