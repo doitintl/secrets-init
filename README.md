@@ -1,4 +1,5 @@
 [![test](https://github.com/doitintl/secrets-init/actions/workflows/test.yaml/badge.svg)](https://github.com/doitintl/secrets-init/actions/workflows/test.yaml) [![Go Report Card](https://goreportcard.com/badge/github.com/doitintl/secrets-init)](https://goreportcard.com/report/github.com/doitintl/secrets-init)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdoitintl%2Fsecrets-init.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdoitintl%2Fsecrets-init?ref=badge_shield)
 
 [![](https://images.microbadger.com/badges/image/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init) [![](https://images.microbadger.com/badges/version/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init) [![](https://images.microbadger.com/badges/commit/doitintl/secrets-init.svg)](http://microbadger.com/images/doitintl/secrets-init)
 
@@ -92,3 +93,7 @@ The [kube-secrets-init](https://github.com/doitintl/kube-secrets-init) implement
 ## Code Reference
 
 Initial init system code was copied from [go-init](https://github.com/pablo-ruth/go-init) project.
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdoitintl%2Fsecrets-init.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdoitintl%2Fsecrets-init?ref=badge_large)
