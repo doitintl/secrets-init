@@ -12,9 +12,7 @@ import (
 	"secrets-init/pkg/secrets"
 	"secrets-init/pkg/secrets/aws"
 	"secrets-init/pkg/secrets/google"
-	"sync"
 	"syscall"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
@@ -110,11 +108,7 @@ func copyCmd(c *cli.Context) error {
 }
 
 func mainCmd(c *cli.Context) error {
-	// Routine to reap zombies (it's the job of init)
-	ctx, cancel := context.WithCancel(context.Background())
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go removeZombies(ctx, &wg)
+	ctx := context.Background()
 
 	// get provider
 	var provider secrets.Provider
@@ -127,47 +121,50 @@ func mainCmd(c *cli.Context) error {
 	if err != nil {
 		log.WithField("provider", c.String("provider")).WithError(err).Error("failed to initialize secrets provider")
 	}
+
 	// Launch main command
-	var mainRC int
-	err = run(ctx, provider, c.Args().Slice())
+	var childPid int
+	err = run(ctx, provider, c.Args().Slice(), &childPid)
 	if err != nil {
 		log.WithError(err).Error("failed to run")
-		mainRC = 1
+		os.Exit(1)
 	}
 
-	// Wait removeZombies goroutine
-	cleanQuit(cancel, &wg, mainRC)
+	// Routine to reap zombies (it's the job of init)
+	removeZombies(childPid)
 	return nil
 }
 
-func removeZombies(ctx context.Context, wg *sync.WaitGroup) {
+func removeZombies(childPid int) {
+	var exitCode int
 	for {
 		var status syscall.WaitStatus
 
 		// wait for an orphaned zombie process
-		pid, _ := syscall.Wait4(-1, &status, syscall.WNOHANG, nil)
+		pid, err := syscall.Wait4(-1, &status, 0, nil)
 
-		if pid <= 0 {
-			// PID is 0 or -1 if no child waiting, so we wait for 1 second for next check
-			time.Sleep(1 * time.Second)
+		if pid == -1 {
+			// if errno == ECHILD then no children remain; exit cleanly
+			if err == syscall.ECHILD {
+				break
+			}
+			log.WithError(err).Error("unexpected wait4 error")
+			os.Exit(1)
 		} else {
+			// check if pid is child, if so save
 			// PID is > 0 if a child was reaped and we immediately check if another one is waiting
+			if pid == childPid {
+				exitCode = status.ExitStatus()
+			}
 			continue
 		}
-
-		// non-blocking test if context is done
-		select {
-		case <-ctx.Done():
-			// context is done, so we stop goroutine
-			wg.Done()
-			return
-		default:
-		}
 	}
+	// no more children, exit with the same code as the child process
+	os.Exit(exitCode)
 }
 
 // run passed command
-func run(ctx context.Context, provider secrets.Provider, commandSlice []string) error {
+func run(ctx context.Context, provider secrets.Provider, commandSlice []string, childPid *int) error {
 	var commandStr string
 	var argsSlice []string
 
@@ -185,9 +182,7 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 
 	// register a channel to receive system signals
 	sigs := make(chan os.Signal, 1)
-	defer close(sigs)
 	signal.Notify(sigs)
-	defer signal.Reset()
 
 	// define a command and rebind its stdout and stdin
 	cmd := exec.Command(commandStr, argsSlice...)
@@ -219,6 +214,7 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 		log.WithError(err).Error("failed to start command")
 		return err
 	}
+	*childPid = cmd.Process.Pid
 
 	// Goroutine for signals forwarding
 	go func() {
@@ -239,20 +235,5 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 		}
 	}()
 
-	// wait for the command to exit
-	err = cmd.Wait()
-	if err != nil {
-		log.WithError(err).Error("failed to wait for command to complete")
-		return err
-	}
-
 	return nil
-}
-
-func cleanQuit(cancel context.CancelFunc, wg *sync.WaitGroup, code int) {
-	// signal zombie goroutine to stop and wait for it to release waitgroup
-	cancel()
-	wg.Wait()
-
-	os.Exit(code)
 }
