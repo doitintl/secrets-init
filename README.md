@@ -71,6 +71,29 @@ MY_DB_PASSWORD=gcp:secretmanager:projects/$PROJECT_ID/secrets/mydbpassword/versi
 MY_DB_PASSWORD=very-secret-password
 ```
 
+### Integration with Kubernetes
+
+User can put a Kubernetes secret namespace/name/key (prefixed with `k8s:secret:`) as environment variable value. The `secrets-init` will resolve any environment value to the referenced key within the kubernetes secret.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test
+  namespace: default
+type: Opaque
+data:
+  foo: YmFy # base64 encoded "bar"
+```
+
+```sh
+# environment variable passed to `secrets-init`
+MY_PASSWORD=k8s:secret:default:test:foo
+
+# resolved value
+MY_PASSWORD=bar
+```
+
 ### Requirement
 
 #### AWS
