@@ -12,6 +12,7 @@ import (
 	"secrets-init/pkg/secrets"
 	"secrets-init/pkg/secrets/aws"
 	"secrets-init/pkg/secrets/google"
+	"secrets-init/pkg/secrets/kubernetes"
 	"sync"
 	"syscall"
 	"time"
@@ -39,8 +40,8 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "provider, p",
-				Usage: "supported secrets manager provider ['aws', 'google']",
-				Value: "aws",
+				Usage: "supported secrets manager provider ['aws', 'google', 'kubernetes']",
+				Value: "kubernetes",
 			},
 		},
 		Commands: []*cli.Command{
@@ -123,6 +124,8 @@ func mainCmd(c *cli.Context) error {
 		provider, err = aws.NewAwsSecretsProvider()
 	} else if c.String("provider") == "google" {
 		provider, err = google.NewGoogleSecretsProvider(ctx)
+	} else if c.String("provider") == "kubernetes" {
+		provider, err = kubernetes.NewKubernetesSecretsProvider(ctx)
 	}
 	if err != nil {
 		log.WithField("provider", c.String("provider")).WithError(err).Error("failed to initialize secrets provider")
