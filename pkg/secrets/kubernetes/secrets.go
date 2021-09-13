@@ -26,10 +26,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Secrets Provider Kubernetes secrets provider
 type SecretsProvider struct {
 	kubernetes.Clientset
 }
 
+// NewKubernetesSecretsProvider init Kubernetes Secrets Provider
 func NewKubernetesSecretsProvider(ctx context.Context) (secrets.Provider, error) {
 	var err error
 
@@ -47,6 +49,9 @@ func NewKubernetesSecretsProvider(ctx context.Context) (secrets.Provider, error)
 	}, nil
 }
 
+// ResolveSecrets replaces all passed in variables values prefixed with 'k8s:secret:'
+// by corresponding secrets from the Kubernetes cluster the workload runs.
+// Format: `k8s:secret:{NAMESPACE}:{SECRET_NAME}:{SECRET_KEY}`
 func (sp *SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([]string, error) {
 	var envs []string
 
