@@ -22,6 +22,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build TARGETOS=${TARGETOS} TARGETA
 
 # final image
 FROM scratch
+# copy certificates
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 # copy the binary to the production image from the builder stage.
 COPY --from=builder /go/src/app/.bin/secrets-init /secrets-init
 ENTRYPOINT ["/secrets-init"]
