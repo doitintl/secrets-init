@@ -33,6 +33,7 @@ Summary:
 
 User can put AWS secret ARN as environment variable value. The `secrets-init` will resolve any environment value, using specified ARN, to referenced secret value.
 
+If the secret is saved as a Key/Value pair, all the keys are applied to as environment variables and passed. The environment variable passed is ignored unless it is inside the key/value pair.
 ```sh
 # environment variable passed to `secrets-init`
 MY_DB_PASSWORD=arn:aws:secretsmanager:$AWS_REGION:$AWS_ACCOUNT_ID:secret:mydbpassword-cdma3

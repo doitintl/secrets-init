@@ -2,6 +2,7 @@ package aws
 
 import (
 	"context"
+	"encoding/json"
 	"secrets-init/pkg/secrets"
 	"strings"
 
@@ -50,7 +51,20 @@ func (sp *SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([
 			if err != nil {
 				return vars, errors.Wrap(err, "failed to get secret from AWS Secrets Manager")
 			}
-			env = key + "=" + *secret.SecretString
+			if IsJSON(secret.SecretString) {
+				var keyValueSecret map[string]string
+				err = json.Unmarshal([]byte(*secret.SecretString), &keyValueSecret)
+				if err != nil {
+					return vars, errors.Wrap(err, "failed to decode key/value secret")
+				}
+				for key, value := range keyValueSecret {
+					e := key + "=" + value
+					envs = append(envs, e)
+				}
+				continue // We continue to not add this ENV variable but only the environment variables that exists in the JSON
+			} else {
+				env = key + "=" + *secret.SecretString
+			}
 		} else if strings.HasPrefix(value, "arn:aws:ssm") && strings.Contains(value, ":parameter/") {
 			tokens := strings.Split(value, ":")
 			// valid parameter ARN arn:aws:ssm:REGION:ACCOUNT:parameter/PATH
@@ -79,4 +93,12 @@ func (sp *SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([
 	}
 
 	return envs, nil
+}
+
+func IsJSON(str *string) bool {
+	if str == nil {
+		return false
+	}
+	var js json.RawMessage
+	return json.Unmarshal([]byte(*str), &js) == nil
 }

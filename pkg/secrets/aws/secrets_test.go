@@ -68,6 +68,30 @@ func TestSecretsProvider_ResolveSecrets(t *testing.T) {
 			},
 		},
 		{
+			name: "get all secrets from from Secrets Manager json",
+			vars: []string{
+				"test-secret-1=arn:aws:secretsmanager:12345678-json",
+			},
+			want: []string{
+				"TEST_1=test-secret-value-1",
+				"TEST_2=test-secret-value-2",
+			},
+			mockServiceProvider: func(mockSM *mocks.SecretsManagerAPI, mockSSM *mocks.SSMAPI) secrets.Provider {
+				sp := SecretsProvider{sm: mockSM, ssm: mockSSM}
+				vars := map[string]string{
+					"arn:aws:secretsmanager:12345678-json": "{\n  \"TEST_1\": \"test-secret-value-1\",\n  \"TEST_2\": \"test-secret-value-2\"\n}",
+				}
+				for n, v := range vars {
+					name := n
+					value := v
+					valueInput := secretsmanager.GetSecretValueInput{SecretId: &name}
+					valueOutput := secretsmanager.GetSecretValueOutput{SecretString: &value}
+					mockSM.On("GetSecretValue", &valueInput).Return(&valueOutput, nil)
+				}
+				return &sp
+			},
+		},
+		{
 			name: "no secrets",
 			vars: []string{
 				"non-secret-1=hello-1",
