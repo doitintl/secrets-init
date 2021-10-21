@@ -141,7 +141,7 @@ func removeZombies(childPid int) {
 		var status syscall.WaitStatus
 
 		// wait for an orphaned zombie process
-		pid, err := syscall.Wait4(-1, &status, 0, nil)
+		pid, err := syscall.Wait4(-1, &status, syscall.WNOHANG, nil)
 
 		if pid == -1 {
 			// if errno == ECHILD then no children remain; exit cleanly
@@ -164,13 +164,13 @@ func removeZombies(childPid int) {
 }
 
 // run passed command
-func run(ctx context.Context, provider secrets.Provider, commandSlice []string, childPid *int) error {
+func run(ctx context.Context, provider secrets.Provider, commandSlice []string) (childPid int, err error) {
 	var commandStr string
 	var argsSlice []string
 
 	if len(commandSlice) == 0 {
 		log.Warn("no command specified")
-		return nil
+		return
 	}
 
 	// split command and arguments
@@ -191,7 +191,6 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string, 
 	// create a dedicated pidgroup used to forward signals to the main process and its children
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	var err error
 	// set environment variables
 	if provider != nil {
 		cmd.Env, err = provider.ResolveSecrets(ctx, os.Environ())
@@ -212,9 +211,9 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string, 
 	err = cmd.Start()
 	if err != nil {
 		log.WithError(err).Error("failed to start command")
-		return err
+		return
 	}
-	*childPid = cmd.Process.Pid
+	childPid = cmd.Process.Pid
 
 	// Goroutine for signals forwarding
 	go func() {
@@ -235,5 +234,5 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string, 
 		}
 	}()
 
-	return nil
+	return
 }
