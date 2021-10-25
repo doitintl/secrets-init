@@ -124,7 +124,7 @@ func mainCmd(c *cli.Context) error {
 
 	// Launch main command
 	var childPid int
-	err = run(ctx, provider, c.Args().Slice(), &childPid)
+	childPid, err = run(ctx, provider, c.Args().Slice())
 	if err != nil {
 		log.WithError(err).Error("failed to run")
 		os.Exit(1)
@@ -170,7 +170,7 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 
 	if len(commandSlice) == 0 {
 		log.Warn("no command specified")
-		return
+		return childPid, err
 	}
 
 	// split command and arguments
@@ -211,7 +211,7 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 	err = cmd.Start()
 	if err != nil {
 		log.WithError(err).Error("failed to start command")
-		return
+		return childPid, err
 	}
 	childPid = cmd.Process.Pid
 
@@ -234,5 +234,5 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 		}
 	}()
 
-	return
+	return childPid, err
 }
