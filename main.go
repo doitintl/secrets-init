@@ -141,7 +141,7 @@ func removeZombies(childPid int) {
 		var status syscall.WaitStatus
 
 		// wait for an orphaned zombie process
-		pid, err := syscall.Wait4(-1, &status, syscall.WNOHANG, nil)
+		pid, err := syscall.Wait4(-1, &status, 0, nil)
 
 		if pid == -1 {
 			// if errno == ECHILD then no children remain; exit cleanly
