@@ -2,17 +2,18 @@ package google
 
 import (
 	"context"
-	"secrets-init/pkg/secrets"
 	"strings"
+
+	"secrets-init/pkg/secrets" //nolint:gci
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/pkg/errors"
-	secretspb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+	secretspb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1" //nolint:gci
 )
 
 // SecretsProvider Google Cloud secrets provider
 type SecretsProvider struct {
-	sm GoogleSecretsManagerAPI
+	sm SecretsManagerAPI
 }
 
 // NewGoogleSecretsProvider init Google Secrets Provider
@@ -29,10 +30,11 @@ func NewGoogleSecretsProvider(ctx context.Context) (secrets.Provider, error) {
 // ResolveSecrets replaces all passed variables values prefixed with 'gcp:secretmanager'
 // by corresponding secrets from Google Secret Manager
 // The secret name should be in the format (optionally with version)
-//    `gcp:secretmanager:projects/{PROJECT_ID}/secrets/{SECRET_NAME}`
-//    `gcp:secretmanager:projects/{PROJECT_ID}/secrets/{SECRET_NAME}/versions/{VERSION|latest}`
+//
+//	`gcp:secretmanager:projects/{PROJECT_ID}/secrets/{SECRET_NAME}`
+//	`gcp:secretmanager:projects/{PROJECT_ID}/secrets/{SECRET_NAME}/versions/{VERSION|latest}`
 func (sp SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([]string, error) {
-	var envs []string
+	envs := make([]string, 0, len(vars))
 	for _, env := range vars {
 		kv := strings.Split(env, "=")
 		key, value := kv[0], kv[1]

@@ -9,14 +9,16 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
-	"secrets-init/pkg/secrets"
-	"secrets-init/pkg/secrets/aws"
-	"secrets-init/pkg/secrets/google"
 	"syscall"
 
+	"secrets-init/pkg/secrets" //nolint:gci
+	"secrets-init/pkg/secrets/aws"
+	"secrets-init/pkg/secrets/google"
+
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/sys/unix"
+	"golang.org/x/sys/unix" //nolint:gci
 )
 
 var (
@@ -78,7 +80,7 @@ func main() {
 
 func copyCmd(c *cli.Context) error {
 	if c.Args().Len() != 1 {
-		return fmt.Errorf("must specify copy destination")
+		return errors.New("must specify copy destination")
 	}
 	// full path of current executable
 	src := os.Args[0]
@@ -87,30 +89,34 @@ func copyCmd(c *cli.Context) error {
 	// copy file with current file mode flags
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to stat source file")
 	}
 	if !sourceFileStat.Mode().IsRegular() {
-		return fmt.Errorf("%s is not a regular file", src)
+		return errors.Errorf("%s is not a regular file", src)
 	}
 	source, err := os.Open(src)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to open source file")
 	}
 	srcInfo, err := source.Stat()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to stat source file")
 	}
 	defer func() { _ = source.Close() }()
 	destination, err := os.Create(dest)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create %s", dest)
 	}
 	defer func() { _ = destination.Close() }()
 	_, err = io.Copy(destination, source)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to copy file")
 	}
-	return destination.Chmod(srcInfo.Mode())
+	err = destination.Chmod(srcInfo.Mode())
+	if err != nil {
+		return errors.Wrap(err, "failed to set file mode")
+	}
+	return nil
 }
 
 func mainCmd(c *cli.Context) error {
@@ -151,14 +157,14 @@ func removeZombies(childPid int) {
 
 		if pid == -1 {
 			// if errno == ECHILD then no children remain; exit cleanly
-			if err == syscall.ECHILD {
+			if errors.Is(err, syscall.ECHILD) {
 				break
 			}
 			log.WithError(err).Error("unexpected wait4 error")
 			os.Exit(1)
 		} else {
 			// check if pid is child, if so save
-			// PID is > 0 if a child was reaped and we immediately check if another one is waiting
+			// PID is > 0 if a child was reaped, and we immediately check if another one is waiting
 			if pid == childPid {
 				exitCode = status.ExitStatus()
 			}
@@ -216,8 +222,7 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 	}).Debug("starting command")
 	err = cmd.Start()
 	if err != nil {
-		log.WithError(err).Error("failed to start command")
-		return childPid, err
+		return childPid, errors.Wrap(err, "failed to start command")
 	}
 	childPid = cmd.Process.Pid
 
@@ -240,7 +245,7 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 		}
 	}()
 
-	return childPid, err
+	return childPid, nil
 }
 
 func setLogFormatter(c *cli.Context) error {

@@ -7,7 +7,7 @@ import (
 	secretspb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
-//nolint:golint
-type GoogleSecretsManagerAPI interface {
+// SecretsManagerAPI is the interface for the Google Secrets Manager API.
+type SecretsManagerAPI interface {
 	AccessSecretVersion(ctx context.Context, req *secretspb.AccessSecretVersionRequest, opts ...gax.CallOption) (*secretspb.AccessSecretVersionResponse, error) //nolint:lll
 }

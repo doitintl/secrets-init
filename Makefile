@@ -28,7 +28,7 @@ export CGO_ENABLED=0
 export GOPROXY=https://proxy.golang.org
 
 .PHONY: all
-all: fmt lint test ; $(info $(M) building executable…) @ ## Build program binary
+all: fmt lint test ; $(info $(M) building executable...) @ ## Build program binary
 	$Q env GOOS=$(TARGETOS) GOARCH=$(TARGETARCH) $(GO) build \
 		-tags release \
 		-ldflags "$(LDFLAGS_VERSION) -X main.Platform=$(TARGETOS)/$(TARGETARCH)" \
@@ -52,7 +52,7 @@ platfrom-build: clean lint test ; $(info $(M) building binaries for multiple os/
 setup-tools: setup-lint setup-gocov setup-gocov-xml setup-go2xunit setup-mockery setup-ghr
 
 setup-lint:
-	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
 setup-gocov:
 	$(GO) install github.com/axw/gocov/...
 setup-gocov-xml:
@@ -80,10 +80,10 @@ test-verbose: ARGS=-v            ## Run tests in verbose mode with coverage repo
 test-race:    ARGS=-race         ## Run tests with race detector
 $(TEST_TARGETS): NAME=$(MAKECMDGOALS:test-%=%)
 $(TEST_TARGETS): test
-check test tests: fmt ; $(info $(M) running $(NAME:%=% )tests…) @ ## Run tests
+check test tests: fmt ; $(info $(M) running $(NAME:%=% )tests...) @ ## Run tests
 	$Q $(GO) test -timeout $(TIMEOUT)s $(ARGS) $(TESTPKGS)
 
-test-xml: fmt lint | $(GO2XUNIT) ; $(info $(M) running xUnit tests…) @ ## Run tests with xUnit output
+test-xml: fmt lint | $(GO2XUNIT) ; $(info $(M) running xUnit tests...) @ ## Run tests with xUnit output
 	$Q mkdir -p test
 	$Q 2>&1 $(GO) test -timeout $(TIMEOUT)s -v $(TESTPKGS) | tee test/tests.output
 	$(GO2XUNIT) -fail -input test/tests.output -output test/tests.xml
@@ -95,7 +95,7 @@ COVERAGE_HTML    = $(COVERAGE_DIR)/index.html
 .PHONY: test-coverage test-coverage-tools
 test-coverage-tools: | $(GOCOV) $(GOCOVXML)
 test-coverage: COVERAGE_DIR := $(CURDIR)/test/coverage.$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-test-coverage: fmt lint test-coverage-tools ; $(info $(M) running coverage tests…) @ ## Run coverage tests
+test-coverage: fmt lint test-coverage-tools ; $(info $(M) running coverage tests...) @ ## Run coverage tests
 	$Q mkdir -p $(COVERAGE_DIR)
 	$Q $(GO) test \
 		-coverpkg=$$($(GO) list -f '{{ join .Deps "\n" }}' $(TESTPKGS) | \
@@ -111,15 +111,15 @@ lint: setup-lint ; $(info $(M) running golangci-lint) @ ## Run golangci-lint
 	$Q $(GOLINT) run --timeout=5m -v -c $(LINT_CONFIG) ./...
 
 .PHONY: fmt
-fmt: ; $(info $(M) running gofmt…) @ ## Run gofmt on all source files
+fmt: ; $(info $(M) running gofmt...) @ ## Run gofmt on all source files
 	$Q $(GO) fmt $(PKGS)
 
 .PHONY: mock
-mock: | $(GOMOCK) ; $(info $(M) generating mocks…) @ ## Run mockery
+mock: ; $(info $(M) generating mocks...) @ ## Run mockery
 	$Q $(GO) mod vendor -v
-	$Q $(GOMOCK) -name SecretsManagerAPI -dir vendor/github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface
-	$Q $(GOMOCK) -name SSMAPI -dir vendor/github.com/aws/aws-sdk-go/service/ssm/ssmiface
-	$Q $(GOMOCK) -name GoogleSecretsManagerAPI -dir pkg/secrets/google
+	$Q $(GOMOCK) --name SecretsManagerAPI --dir vendor/github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface
+	$Q $(GOMOCK) --name SSMAPI --dir vendor/github.com/aws/aws-sdk-go/service/ssm/ssmiface
+	$Q $(GOMOCK) --name GoogleSecretsManagerAPI --dir pkg/secrets/google
 	$Q rm -rf vendor
 
 # Misc
@@ -137,7 +137,7 @@ endif
 		--token $(GITHUB_TOKEN)
 
 .PHONY: clean
-clean: ; $(info $(M) cleaning…)	@ ## Cleanup everything
+clean: ; $(info $(M) cleaning...)	@ ## Cleanup everything
 	@rm -rf $(BIN)
 	@rm -rf test/tests.* test/coverage.*
 

@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 
-FROM --platform=${BUILDPLATFORM} golang:1.16-alpine as builder
+FROM --platform=${BUILDPLATFORM} golang:1.19-alpine as builder
 # passed by buildkit
 ARG TARGETOS
 ARG TARGETARCH
