@@ -26,17 +26,15 @@ jobs:
         run: |
           make platfrom-build
 
-      - name: Generate Changelog
+      - name: Build Changelog
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@{latest-release}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: make changelog
 
-      - name: Release to GitHub
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: docker://antonyurchenko/git-release:latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DRAFT_RELEASE: "true"
+      - name: Create Release
+        uses: softprops/action-gh-release
         with:
-          args: |
+          body: ${{steps.github_release.outputs.changelog}}
+          files: |
             .bin/*
