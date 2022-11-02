@@ -34,7 +34,13 @@ var (
 
 func main() {
 	app := &cli.App{
+		Before: setLogFormatter,
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "log-format, l",
+				Usage: "select logrus formatter ['json', 'text']",
+				Value: "text",
+			},
 			&cli.StringFlag{
 				Name:  "provider, p",
 				Usage: "supported secrets manager provider ['aws', 'google']",
@@ -235,4 +241,13 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 	}()
 
 	return childPid, err
+}
+
+func setLogFormatter(c *cli.Context) error {
+	if c.String("log-format") == "json" {
+		log.SetFormatter(&log.JSONFormatter{})
+	} else if c.String("log-format") == "text" {
+		log.SetFormatter(&log.TextFormatter{})
+	}
+	return nil
 }
