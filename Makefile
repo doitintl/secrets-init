@@ -132,7 +132,7 @@ ifndef GITHUB_TOKEN
 endif
 	$Q $(DOCKER) run --rm \
 		-v $(CURDIR):/usr/local/src/app \
-		-w /usr/local/src/app ferrarimarco/github-changelog-generator \
+		-w /usr/local/src/app githubchangeloggenerator/github-changelog-generator \
 		--user doitintl --project secrets-init \
 		--token $(GITHUB_TOKEN)
 
