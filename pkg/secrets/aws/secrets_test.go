@@ -1,13 +1,14 @@
-//nolint
+// nolint
 package aws
 
 import (
 	"context"
 	"errors"
 	"reflect"
+	"testing"
+
 	"secrets-init/mocks"
 	"secrets-init/pkg/secrets"
-	"testing"
 
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/ssm"

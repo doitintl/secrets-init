@@ -3,15 +3,21 @@ package aws
 import (
 	"context"
 	"encoding/json"
-	"secrets-init/pkg/secrets"
 	"strings"
+
+	"secrets-init/pkg/secrets" //nolint:gci
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
-	"github.com/pkg/errors"
+	"github.com/pkg/errors" //nolint:gci
+)
+
+const (
+	paramNameTokens            = 6
+	paramNameTokensWithVersion = 7
 )
 
 // SecretsProvider AWS secrets provider
@@ -28,7 +34,7 @@ func NewAwsSecretsProvider() (secrets.Provider, error) {
 	// create AWS session
 	sp.session, err = session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create AWS session")
 	}
 	// init AWS Secrets Manager client
 	sp.sm = secretsmanager.New(sp.session)
@@ -39,8 +45,8 @@ func NewAwsSecretsProvider() (secrets.Provider, error) {
 
 // ResolveSecrets replaces all passed variables values prefixed with 'aws:aws:secretsmanager' and 'arn:aws:ssm:REGION:ACCOUNT:parameter'
 // by corresponding secrets from AWS Secret Manager and AWS Parameter Store
-func (sp *SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([]string, error) {
-	var envs []string
+func (sp *SecretsProvider) ResolveSecrets(_ context.Context, vars []string) ([]string, error) { //nolint:gocognit
+	envs := make([]string, 0, len(vars))
 
 	for _, env := range vars {
 		kv := strings.Split(env, "=")
@@ -69,12 +75,12 @@ func (sp *SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([
 			tokens := strings.Split(value, ":")
 			// valid parameter ARN arn:aws:ssm:REGION:ACCOUNT:parameter/PATH
 			// or arn:aws:ssm:REGION:ACCOUNT:parameter/PATH:VERSION
-			if len(tokens) == 6 || len(tokens) == 7 {
+			if len(tokens) == paramNameTokens || len(tokens) == paramNameTokensWithVersion {
 				// get SSM parameter name (path)
 				paramName := strings.TrimPrefix(tokens[5], "parameter")
 
-				if len(tokens) == 7 {
-					paramName = strings.Join([]string{paramName, tokens[6]}, ":")
+				if len(tokens) == paramNameTokensWithVersion {
+					paramName = paramName + ":" + tokens[6]
 				}
 
 				// get AWS SSM API
