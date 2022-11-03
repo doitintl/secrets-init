@@ -39,9 +39,10 @@ func main() {
 		Before: setLogFormatter,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "log-format, l",
-				Usage: "select logrus formatter ['json', 'text']",
-				Value: "text",
+				Name:    "log-format, l",
+				Usage:   "select logrus formatter ['json', 'text']",
+				Value:   "text",
+				EnvVars: []string{"LOG_FORMAT"},
 			},
 			&cli.StringFlag{
 				Name:  "provider, p",
