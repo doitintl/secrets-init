@@ -19,7 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3" //nolint:gci
 )
 
 var (
