@@ -49,7 +49,7 @@ func (sp *SecretsProvider) ResolveSecrets(_ context.Context, vars []string) ([]s
 	envs := make([]string, 0, len(vars))
 
 	for _, env := range vars {
-		kv := strings.Split(env, "=")
+		kv := strings.SplitN(env, "=", 2)
 		key, value := kv[0], kv[1]
 		if strings.HasPrefix(value, "arn:aws:secretsmanager") {
 			// get secret value

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -19,6 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix" //nolint:gci
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -49,6 +51,18 @@ func main() {
 				Usage: "supported secrets manager provider ['aws', 'google']",
 				Value: "aws",
 			},
+			&cli.StringFlag{
+				Name:    "config, c",
+				Usage:   "config file path (if empty env variables are used)",
+				Value:   "",
+				EnvVars: []string{"CONFIG_FILE"},
+			},
+			&cli.StringFlag{
+				Name:    "profile",
+				Usage:   "profile used on config file",
+				Value:   "default",
+				EnvVars: []string{"DEFAULT_PROFILE"},
+			},
 		},
 		Commands: []*cli.Command{
 			{
@@ -77,6 +91,26 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func parseConfig(configFile string, profile string) []string {
+	variables := map[string]map[string]string{}
+	envVariables := []string{}
+	file, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		log.Fatalf("Could not read the file due to this %s error \n", err)
+	}
+	err = yaml.Unmarshal(file, &variables)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	if _, ok := variables[profile]; !ok {
+		log.Fatalf("Profile %s is not present on config file\n", profile)
+	}
+	for k, v := range variables[profile] {
+		envVariables = append(envVariables, fmt.Sprintf("%s=%s", k, v))
+	}
+	return envVariables
 }
 
 func copyCmd(c *cli.Context) error {
@@ -137,7 +171,7 @@ func mainCmd(c *cli.Context) error {
 
 	// Launch main command
 	var childPid int
-	childPid, err = run(ctx, provider, c.Args().Slice())
+	childPid, err = run(ctx, provider, c)
 	if err != nil {
 		log.WithError(err).Error("failed to run")
 		os.Exit(1)
@@ -177,9 +211,12 @@ func removeZombies(childPid int) {
 }
 
 // run passed command
-func run(ctx context.Context, provider secrets.Provider, commandSlice []string) (childPid int, err error) {
+func run(ctx context.Context, provider secrets.Provider, c *cli.Context) (childPid int, err error) {
 	var commandStr string
 	var argsSlice []string
+	var vars []string = os.Environ()
+
+	commandSlice := c.Args().Slice()
 
 	if len(commandSlice) == 0 {
 		log.Warn("no command specified")
@@ -206,7 +243,11 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 
 	// set environment variables
 	if provider != nil {
-		cmd.Env, err = provider.ResolveSecrets(ctx, os.Environ())
+		if config := c.String("config"); config != "" {
+			vars = parseConfig(config, c.String("profile"))
+		}
+
+		cmd.Env, err = provider.ResolveSecrets(ctx, vars)
 		if err != nil {
 			log.WithError(err).Error("failed to resolve secrets")
 		}
