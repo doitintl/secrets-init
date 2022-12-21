@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -19,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/sys/unix" //nolint:gci
+	"golang.org/x/sys/unix"
 	"gopkg.in/yaml.v3"
 )
 
@@ -93,10 +92,10 @@ func main() {
 	}
 }
 
-func parseConfig(configFile string, profile string) []string {
+func parseConfig(configFile, profile string) []string {
 	variables := map[string]map[string]string{}
 	envVariables := []string{}
-	file, err := ioutil.ReadFile(configFile)
+	file, err := os.ReadFile(configFile)
 	if err != nil {
 		log.Fatalf("Could not read the file due to this %s error \n", err)
 	}
@@ -214,7 +213,7 @@ func removeZombies(childPid int) {
 func run(ctx context.Context, provider secrets.Provider, c *cli.Context) (childPid int, err error) {
 	var commandStr string
 	var argsSlice []string
-	var vars []string = os.Environ()
+	vars := os.Environ()
 
 	commandSlice := c.Args().Slice()
 

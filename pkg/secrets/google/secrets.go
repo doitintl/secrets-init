@@ -11,6 +11,10 @@ import (
 	secretspb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1" //nolint:gci
 )
 
+const (
+	maxSpitSize = 2
+)
+
 // SecretsProvider Google Cloud secrets provider
 type SecretsProvider struct {
 	sm SecretsManagerAPI
@@ -36,7 +40,7 @@ func NewGoogleSecretsProvider(ctx context.Context) (secrets.Provider, error) {
 func (sp SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([]string, error) {
 	envs := make([]string, 0, len(vars))
 	for _, env := range vars {
-		kv := strings.SplitN(env, "=", 2)
+		kv := strings.SplitN(env, "=", maxSpitSize)
 		key, value := kv[0], kv[1]
 		if strings.HasPrefix(value, "gcp:secretmanager:") {
 			// construct valid secret name

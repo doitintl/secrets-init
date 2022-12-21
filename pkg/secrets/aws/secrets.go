@@ -18,6 +18,7 @@ import (
 const (
 	paramNameTokens            = 6
 	paramNameTokensWithVersion = 7
+	maxSpitSize                = 2
 )
 
 // SecretsProvider AWS secrets provider
@@ -49,7 +50,7 @@ func (sp *SecretsProvider) ResolveSecrets(_ context.Context, vars []string) ([]s
 	envs := make([]string, 0, len(vars))
 
 	for _, env := range vars {
-		kv := strings.SplitN(env, "=", 2)
+		kv := strings.SplitN(env, "=", maxSpitSize)
 		key, value := kv[0], kv[1]
 		if strings.HasPrefix(value, "arn:aws:secretsmanager") {
 			// get secret value
