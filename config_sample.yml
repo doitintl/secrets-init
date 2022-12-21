@@ -1,0 +1,9 @@
+default:
+  DB_HOST: gcp:secretmanager:projects/xxxxxx/secrets/dburl
+  DB_NAME: gcp:secretmanager:projects/xxxxxx/secrets/dbname
+prod:
+  DB_HOST: arn:aws:ssm:$AWS_REGION:$AWS_ACCOUNT_ID:parameter/api/key
+  DB_NAME: arn:aws:ssm:$AWS_REGION:$AWS_ACCOUNT_ID:parameter/api/key
+uat:
+  DB_HOST: gcp:secretmanager:projects/zzzzzz/secrets/dburl
+  DB_NAME: gcp:secretmanager:projects/zzzzzz/secrets/dbname
