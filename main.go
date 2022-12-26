@@ -63,11 +63,6 @@ func main() {
 				Value:   "default",
 				EnvVars: []string{"DEFAULT_PROFILE"},
 			},
-			&cli.BoolFlag{
-				Name:  "ignore-zombies, iz",
-				Usage: "allow ignoring zombie processes",
-				Value: false,
-			},
 		},
 		Commands: []*cli.Command{
 			{
@@ -183,9 +178,7 @@ func mainCmd(c *cli.Context) error {
 	}
 
 	// Routine to reap zombies (it's the job of init)
-	if !c.Bool("ignore-zombies") {
-		removeZombies(childPid)
-	}
+	removeZombies(childPid)
 	return nil
 }
 
