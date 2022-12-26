@@ -46,9 +46,10 @@ func main() {
 				EnvVars: []string{"LOG_FORMAT"},
 			},
 			&cli.StringFlag{
-				Name:  "provider, p",
-				Usage: "supported secrets manager provider ['aws', 'google']",
-				Value: "aws",
+				Name:    "provider, p",
+				Usage:   "supported secrets manager provider ['aws', 'google']",
+				Value:   "google",
+				EnvVars: []string{"SECRET_PROVIDER"},
 			},
 			&cli.StringFlag{
 				Name:    "config, c",
@@ -244,6 +245,7 @@ func run(ctx context.Context, provider secrets.Provider, c *cli.Context) (childP
 	if provider != nil {
 		if config := c.String("config"); config != "" {
 			vars = parseConfig(config, c.String("profile"))
+			vars = append(vars, os.Environ()...)
 		}
 
 		cmd.Env, err = provider.ResolveSecrets(ctx, vars)
