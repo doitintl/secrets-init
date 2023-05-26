@@ -53,6 +53,29 @@ func TestSecretsProvider_ResolveSecrets(t *testing.T) {
 			},
 		},
 		{
+			name: "get implicit (latest) version single secret from Secrets Manager with the shorthand syntax",
+			args: args{
+				ctx: context.TODO(),
+				vars: []string{
+					"test-secret=gcp:secretmanager:test-secret",
+				},
+			},
+			want: []string{
+				"test-secret=test-secret-value",
+			},
+			mockServiceProvider: func(ctx context.Context, mockSM *mocks.GoogleSecretsManagerAPI) secrets.Provider {
+				sp := SecretsProvider{sm: mockSM, projectID: "test-project-id"}
+				req := secretspb.AccessSecretVersionRequest{
+					Name: "projects/test-project-id/secrets/test-secret/versions/latest",
+				}
+				res := secretspb.AccessSecretVersionResponse{Payload: &secretspb.SecretPayload{
+					Data: []byte("test-secret-value"),
+				}}
+				mockSM.On("AccessSecretVersion", ctx, &req).Return(&res, nil)
+				return &sp
+			},
+		},
+		{
 			name: "get explicit single secret version from Secrets Manager",
 			args: args{
 				ctx: context.TODO(),
@@ -65,6 +88,29 @@ func TestSecretsProvider_ResolveSecrets(t *testing.T) {
 			},
 			mockServiceProvider: func(ctx context.Context, mockSM *mocks.GoogleSecretsManagerAPI) secrets.Provider {
 				sp := SecretsProvider{sm: mockSM}
+				req := secretspb.AccessSecretVersionRequest{
+					Name: "projects/test-project-id/secrets/test-secret/versions/5",
+				}
+				res := secretspb.AccessSecretVersionResponse{Payload: &secretspb.SecretPayload{
+					Data: []byte("test-secret-value"),
+				}}
+				mockSM.On("AccessSecretVersion", ctx, &req).Return(&res, nil)
+				return &sp
+			},
+		},
+		{
+			name: "get explicit single secret version from Secrets Manager with the shorthand syntax",
+			args: args{
+				ctx: context.TODO(),
+				vars: []string{
+					"test-secret=gcp:secretmanager:test-secret/versions/5",
+				},
+			},
+			want: []string{
+				"test-secret=test-secret-value",
+			},
+			mockServiceProvider: func(ctx context.Context, mockSM *mocks.GoogleSecretsManagerAPI) secrets.Provider {
+				sp := SecretsProvider{sm: mockSM, projectID: "test-project-id"}
 				req := secretspb.AccessSecretVersionRequest{
 					Name: "projects/test-project-id/secrets/test-secret/versions/5",
 				}

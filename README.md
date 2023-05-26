@@ -70,6 +70,15 @@ MY_DB_PASSWORD=gcp:secretmanager:projects/$PROJECT_ID/secrets/mydbpassword/versi
 MY_DB_PASSWORD=very-secret-password
 ```
 
+#### Project auto-detection
+
+If secret-manager is running in an environment where the Google metadata server is available, or the `-google-project` flag is set, the secret path may be omitted, and the current project is used.
+
+```sh
+MY_DB_PASSWORD=mydbpassword
+MY_DB_PASSWORD=mydbpassword/versions/2
+```
+
 ### Requirement
 
 #### Container
