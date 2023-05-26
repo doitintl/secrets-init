@@ -230,8 +230,12 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 	// Goroutine for signals forwarding
 	go func() {
 		for sig := range sigs {
-			// ignore SIGCHLD signals since these are only useful for secrets-init
-			if sig != syscall.SIGCHLD {
+			// ignore:
+			// - SIGCHLD signals, since these are only useful for secrets-init
+			// - SIGURG signals, since they are used internally by the secrets-init
+			//   go runtime (see https://github.com/golang/go/issues/37942) and are of
+			//   no interest to the child process
+			if sig != syscall.SIGCHLD && sig != syscall.SIGURG {
 				// forward signal to the main process and its children
 				e := syscall.Kill(-cmd.Process.Pid, sig.(syscall.Signal))
 				if e != nil {
