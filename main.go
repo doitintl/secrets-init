@@ -49,6 +49,11 @@ func main() {
 				Usage: "supported secrets manager provider ['aws', 'google']",
 				Value: "aws",
 			},
+			&cli.BoolFlag{
+				Name:    "exit-early",
+				Usage:   "exit when a provider fails or a secret is not found",
+				EnvVars: []string{"EXIT_EARLY"},
+			},
 		},
 		Commands: []*cli.Command{
 			{
@@ -133,11 +138,14 @@ func mainCmd(c *cli.Context) error {
 	}
 	if err != nil {
 		log.WithField("provider", c.String("provider")).WithError(err).Error("failed to initialize secrets provider")
+		if c.Bool("exit-early") {
+			os.Exit(1)
+		}
 	}
 
 	// Launch main command
 	var childPid int
-	childPid, err = run(ctx, provider, c.Args().Slice())
+	childPid, err = run(ctx, provider, c.Bool("exit-early"), c.Args().Slice())
 	if err != nil {
 		log.WithError(err).Error("failed to run")
 		os.Exit(1)
@@ -177,7 +185,7 @@ func removeZombies(childPid int) {
 }
 
 // run passed command
-func run(ctx context.Context, provider secrets.Provider, commandSlice []string) (childPid int, err error) {
+func run(ctx context.Context, provider secrets.Provider, exitEarly bool, commandSlice []string) (childPid int, err error) {
 	var commandStr string
 	var argsSlice []string
 
@@ -209,6 +217,10 @@ func run(ctx context.Context, provider secrets.Provider, commandSlice []string) 
 		cmd.Env, err = provider.ResolveSecrets(ctx, os.Environ())
 		if err != nil {
 			log.WithError(err).Error("failed to resolve secrets")
+			if exitEarly {
+				log.Error("Exiting early unable to retrieve secrets")
+				os.Exit(1)
+			}
 		}
 	} else {
 		log.Warn("no secrets provider available; using environment without resolving secrets")
