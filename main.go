@@ -49,6 +49,10 @@ func main() {
 				Usage: "supported secrets manager provider ['aws', 'google']",
 				Value: "aws",
 			},
+			&cli.StringFlag{
+				Name:  "google-project",
+				Usage: "the google cloud project for secrets without a project prefix",
+			},
 		},
 		Commands: []*cli.Command{
 			{
@@ -129,7 +133,7 @@ func mainCmd(c *cli.Context) error {
 	if c.String("provider") == "aws" {
 		provider, err = aws.NewAwsSecretsProvider()
 	} else if c.String("provider") == "google" {
-		provider, err = google.NewGoogleSecretsProvider(ctx)
+		provider, err = google.NewGoogleSecretsProvider(ctx, c.String("google-project"))
 	}
 	if err != nil {
 		log.WithField("provider", c.String("provider")).WithError(err).Error("failed to initialize secrets provider")
