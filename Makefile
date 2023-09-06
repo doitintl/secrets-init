@@ -52,7 +52,7 @@ platfrom-build: clean lint test ; $(info $(M) building binaries for multiple os/
 setup-tools: setup-lint setup-gocov setup-gocov-xml setup-go2xunit setup-mockery setup-ghr
 
 setup-lint:
-	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2
 setup-gocov:
 	$(GO) install github.com/axw/gocov/...
 setup-gocov-xml:

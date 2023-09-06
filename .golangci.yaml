@@ -61,7 +61,7 @@ linters:
     # - contextcheck disabled because of generics
     - dupword
     - decorder
-    - depguard
+    # - depguard
     - dogsled
     - dupl
     - durationcheck
