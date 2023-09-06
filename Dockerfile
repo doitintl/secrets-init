@@ -21,7 +21,7 @@ COPY . .
 RUN --mount=type=cache,target=/root/.cache/go-build TARGETOS=${TARGETOS} TARGETARCH=${TARGETARCH} make
 
 # final image
-FROM scratch
+FROM busybox:1.36
 # copy certificates
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 # copy the binary to the production image from the builder stage.
