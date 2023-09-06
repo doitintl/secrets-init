@@ -60,23 +60,12 @@ jobs:
           echo "::set-output name=tag::${tag}"
           echo "::debug::docker image tag ${tag}"
 
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        id: cache
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
       - name: Build and push Docker image
         id: build-push
         uses: docker/build-push-action@v3
         with:
           build-args: VERSION=${{ steps.tagger.outputs.tag }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
           tags: |
             ${{ steps.nomenclator.outputs.name }}:${{ steps.tagger.outputs.tag }}
             ${{ steps.nomenclator.outputs.name }}:latest
