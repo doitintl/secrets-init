@@ -53,6 +53,9 @@ func main() {
 				Name:    "exit-early",
 				Usage:   "exit when a provider fails or a secret is not found",
 				EnvVars: []string{"EXIT_EARLY"},
+			&cli.StringFlag{
+				Name:  "google-project",
+				Usage: "the google cloud project for secrets without a project prefix",
 			},
 		},
 		Commands: []*cli.Command{
@@ -134,7 +137,7 @@ func mainCmd(c *cli.Context) error {
 	if c.String("provider") == "aws" {
 		provider, err = aws.NewAwsSecretsProvider()
 	} else if c.String("provider") == "google" {
-		provider, err = google.NewGoogleSecretsProvider(ctx)
+		provider, err = google.NewGoogleSecretsProvider(ctx, c.String("google-project"))
 	}
 	if err != nil {
 		log.WithField("provider", c.String("provider")).WithError(err).Error("failed to initialize secrets provider")
@@ -242,8 +245,12 @@ func run(ctx context.Context, provider secrets.Provider, exitEarly bool, command
 	// Goroutine for signals forwarding
 	go func() {
 		for sig := range sigs {
-			// ignore SIGCHLD signals since these are only useful for secrets-init
-			if sig != syscall.SIGCHLD {
+			// ignore:
+			// - SIGCHLD signals, since these are only useful for secrets-init
+			// - SIGURG signals, since they are used internally by the secrets-init
+			//   go runtime (see https://github.com/golang/go/issues/37942) and are of
+			//   no interest to the child process
+			if sig != syscall.SIGCHLD && sig != syscall.SIGURG {
 				// forward signal to the main process and its children
 				e := syscall.Kill(-cmd.Process.Pid, sig.(syscall.Signal))
 				if e != nil {
