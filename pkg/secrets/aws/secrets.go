@@ -3,6 +3,7 @@ package aws
 import (
 	"context"
 	"encoding/json"
+	"sort"
 	"strings"
 
 	"secrets-init/pkg/secrets" //nolint:gci
@@ -96,7 +97,7 @@ func (sp *SecretsProvider) ResolveSecrets(_ context.Context, vars []string) ([]s
 		}
 		envs = append(envs, env)
 	}
-
+	sort.Strings(envs)
 	return envs, nil
 }
 

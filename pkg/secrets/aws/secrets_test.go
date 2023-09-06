@@ -48,8 +48,8 @@ func TestSecretsProvider_ResolveSecrets(t *testing.T) {
 				"test-secret-2=arn:aws:secretsmanager:87654321",
 			},
 			want: []string{
-				"test-secret-1=test-secret-value-1",
 				"non-secret=hello",
+				"test-secret-1=test-secret-value-1",
 				"test-secret-2=test-secret-value-2",
 			},
 			mockServiceProvider: func(mockSM *mocks.SecretsManagerAPI, mockSSM *mocks.SSMAPI) secrets.Provider {
