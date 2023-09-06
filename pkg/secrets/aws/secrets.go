@@ -51,7 +51,7 @@ func (sp *SecretsProvider) ResolveSecrets(_ context.Context, vars []string) ([]s
 	for _, env := range vars {
 		kv := strings.Split(env, "=")
 		key, value := kv[0], kv[1]
-		if strings.HasPrefix(value, "arn:aws:secretsmanager") {
+		if strings.HasPrefix(value, "arn:aws:secretsmanager") || strings.HasPrefix(value, "arn:aws-cn:secretsmanager") {
 			// get secret value
 			secret, err := sp.sm.GetSecretValue(&secretsmanager.GetSecretValueInput{SecretId: &value})
 			if err != nil {
@@ -71,7 +71,7 @@ func (sp *SecretsProvider) ResolveSecrets(_ context.Context, vars []string) ([]s
 			} else {
 				env = key + "=" + *secret.SecretString
 			}
-		} else if strings.HasPrefix(value, "arn:aws:ssm") && strings.Contains(value, ":parameter/") {
+		} else if (strings.HasPrefix(value, "arn:aws:ssm") || strings.HasPrefix(value, "arn:aws-cn:ssm")) && strings.Contains(value, ":parameter/") {
 			tokens := strings.Split(value, ":")
 			// valid parameter ARN arn:aws:ssm:REGION:ACCOUNT:parameter/PATH
 			// or arn:aws:ssm:REGION:ACCOUNT:parameter/PATH:VERSION
