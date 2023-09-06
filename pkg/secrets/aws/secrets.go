@@ -45,7 +45,7 @@ func NewAwsSecretsProvider() (secrets.Provider, error) {
 
 // ResolveSecrets replaces all passed variables values prefixed with 'aws:aws:secretsmanager' and 'arn:aws:ssm:REGION:ACCOUNT:parameter'
 // by corresponding secrets from AWS Secret Manager and AWS Parameter Store
-func (sp *SecretsProvider) ResolveSecrets(_ context.Context, vars []string) ([]string, error) { //nolint:gocognit
+func (sp *SecretsProvider) ResolveSecrets(_ context.Context, vars []string) ([]string, error) {
 	envs := make([]string, 0, len(vars))
 
 	for _, env := range vars {
@@ -68,9 +68,8 @@ func (sp *SecretsProvider) ResolveSecrets(_ context.Context, vars []string) ([]s
 					envs = append(envs, e)
 				}
 				continue // We continue to not add this ENV variable but only the environment variables that exists in the JSON
-			} else {
-				env = key + "=" + *secret.SecretString
 			}
+			env = key + "=" + *secret.SecretString
 		} else if (strings.HasPrefix(value, "arn:aws:ssm") || strings.HasPrefix(value, "arn:aws-cn:ssm")) && strings.Contains(value, ":parameter/") {
 			tokens := strings.Split(value, ":")
 			// valid parameter ARN arn:aws:ssm:REGION:ACCOUNT:parameter/PATH

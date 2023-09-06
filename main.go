@@ -53,6 +53,7 @@ func main() {
 				Name:    "exit-early",
 				Usage:   "exit when a provider fails or a secret is not found",
 				EnvVars: []string{"EXIT_EARLY"},
+			},
 			&cli.StringFlag{
 				Name:  "google-project",
 				Usage: "the google cloud project for secrets without a project prefix",
@@ -174,14 +175,13 @@ func removeZombies(childPid int) {
 			}
 			log.WithError(err).Error("unexpected wait4 error")
 			os.Exit(1)
-		} else {
-			// check if pid is child, if so save
-			// PID is > 0 if a child was reaped, and we immediately check if another one is waiting
-			if pid == childPid {
-				exitCode = status.ExitStatus()
-			}
-			continue
 		}
+		// check if pid is child, if so save
+		// PID is > 0 if a child was reaped, and we immediately check if another one is waiting
+		if pid == childPid {
+			exitCode = status.ExitStatus()
+		}
+		continue
 	}
 	// no more children, exit with the same code as the child process
 	os.Exit(exitCode)
