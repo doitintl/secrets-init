@@ -11,7 +11,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
 	github.com/urfave/cli/v2 v2.23.0
-	golang.org/x/sys v0.12.0
+	golang.org/x/sys v0.13.0
 	google.golang.org/genproto v0.0.0-20221010155953-15ba04fc1c0e
 )
 
@@ -30,7 +30,7 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	golang.org/x/net v0.15.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20221006150949-b44042a4b9c1 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/api v0.99.0 // indirect
