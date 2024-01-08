@@ -42,21 +42,23 @@ func main() {
 				Name:    "log-format, l",
 				Usage:   "select logrus formatter ['json', 'text']",
 				Value:   "text",
-				EnvVars: []string{"LOG_FORMAT"},
+				EnvVars: []string{"SECRETS_INIT_LOG_FORMAT", "LOG_FORMAT"},
 			},
 			&cli.StringFlag{
 				Name:  "provider, p",
 				Usage: "supported secrets manager provider ['aws', 'google']",
 				Value: "aws",
+				EnvVars: []string{"SECRETS_INIT_SECRETS_PROVIDER"}
 			},
 			&cli.BoolFlag{
 				Name:    "exit-early",
 				Usage:   "exit when a provider fails or a secret is not found",
-				EnvVars: []string{"EXIT_EARLY"},
+				EnvVars: []string{"SECRETS_INIT_EXIT_EARLY", "EXIT_EARLY"},
 			},
 			&cli.StringFlag{
 				Name:  "google-project",
 				Usage: "the google cloud project for secrets without a project prefix",
+				EnvVars: []string{"SECRETS_INIT_GOOGLE_PROJECT"}
 			},
 		},
 		Commands: []*cli.Command{
