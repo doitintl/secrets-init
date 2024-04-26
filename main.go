@@ -217,13 +217,16 @@ func run(ctx context.Context, provider secrets.Provider, exitEarly, interactive 
 	cmd := exec.Command(commandStr, argsSlice...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	// create a dedicated pidgroup used to forward signals to the main process and its children
+	procAttrs := &syscall.SysProcAttr{Setpgid: true}
 	// rebind stdin if -i flag is set
 	if interactive {
 		cmd.Stdin = os.Stdin
-	} else {
-		// create a dedicated pidgroup used to forward signals to the main process and its children
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		// setting 'Foreground' to true will bind current TTY to the child process
+		procAttrs = &syscall.SysProcAttr{Setpgid: true, Foreground: true}
 	}
+	// set child process attributes
+	cmd.SysProcAttr = procAttrs
 
 	// set environment variables
 	if provider != nil {
