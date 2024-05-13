@@ -26,5 +26,8 @@ FROM busybox:1.36
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 # copy the binary to the production image from the builder stage.
 COPY --from=builder /go/src/app/.bin/secrets-init /secrets-init
+RUN adduser -D -u 1000 secrets-init
+USER 1000
+
 ENTRYPOINT ["/secrets-init"]
 CMD ["--version"]

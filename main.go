@@ -58,6 +58,11 @@ func main() {
 				Name:  "google-project",
 				Usage: "the google cloud project for secrets without a project prefix",
 			},
+			&cli.BoolFlag{
+				Name:  "interactive",
+				Aliases: []string{"i"},
+				Usage: "use this flag if the command expects some input from the stdin",
+			},
 		},
 		Commands: []*cli.Command{
 			{
@@ -149,7 +154,7 @@ func mainCmd(c *cli.Context) error {
 
 	// Launch main command
 	var childPid int
-	childPid, err = run(ctx, provider, c.Bool("exit-early"), c.Args().Slice())
+	childPid, err = run(ctx, provider, c.Bool("exit-early"), c.Bool("interactive"), c.Args().Slice())
 	if err != nil {
 		log.WithError(err).Error("failed to run")
 		os.Exit(1)
@@ -188,7 +193,7 @@ func removeZombies(childPid int) {
 }
 
 // run passed command
-func run(ctx context.Context, provider secrets.Provider, exitEarly bool, commandSlice []string) (childPid int, err error) {
+func run(ctx context.Context, provider secrets.Provider, exitEarly, interactive bool, commandSlice []string) (childPid int, err error) {
 	var commandStr string
 	var argsSlice []string
 
@@ -213,7 +218,15 @@ func run(ctx context.Context, provider secrets.Provider, exitEarly bool, command
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	// create a dedicated pidgroup used to forward signals to the main process and its children
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	procAttrs := &syscall.SysProcAttr{Setpgid: true}
+	// rebind stdin if -i flag is set
+	if interactive {
+		cmd.Stdin = os.Stdin
+		// setting 'Foreground' to true will bind current TTY to the child process
+		procAttrs = &syscall.SysProcAttr{Setpgid: true, Foreground: true}
+	}
+	// set child process attributes
+	cmd.SysProcAttr = procAttrs
 
 	// set environment variables
 	if provider != nil {
