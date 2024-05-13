@@ -59,9 +59,9 @@ func main() {
 				Usage: "the google cloud project for secrets without a project prefix",
 			},
 			&cli.BoolFlag{
-				Name:  "interactive",
+				Name:    "interactive",
 				Aliases: []string{"i"},
-				Usage: "use this flag if the command expects some input from the stdin",
+				Usage:   "use this flag if the command expects some input from the stdin",
 			},
 		},
 		Commands: []*cli.Command{
