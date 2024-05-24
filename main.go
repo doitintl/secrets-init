@@ -45,10 +45,10 @@ func main() {
 				EnvVars: []string{"SECRETS_INIT_LOG_FORMAT", "LOG_FORMAT"},
 			},
 			&cli.StringFlag{
-				Name:  "provider, p",
-				Usage: "supported secrets manager provider ['aws', 'google']",
-				Value: "aws",
-				EnvVars: []string{"SECRETS_INIT_SECRETS_PROVIDER"}
+				Name:    "provider, p",
+				Usage:   "supported secrets manager provider ['aws', 'google']",
+				Value:   "aws",
+				EnvVars: []string{"SECRETS_INIT_SECRETS_PROVIDER", "SECRETS_PROVIDER"},
 			},
 			&cli.BoolFlag{
 				Name:    "exit-early",
@@ -56,9 +56,9 @@ func main() {
 				EnvVars: []string{"SECRETS_INIT_EXIT_EARLY", "EXIT_EARLY"},
 			},
 			&cli.StringFlag{
-				Name:  "google-project",
-				Usage: "the google cloud project for secrets without a project prefix",
-				EnvVars: []string{"SECRETS_INIT_GOOGLE_PROJECT"}
+				Name:    "google-project",
+				Usage:   "the google cloud project for secrets without a project prefix",
+				EnvVars: []string{"SECRETS_INIT_GOOGLE_PROJECT", "GOOGLE_PROJECT"},
 			},
 		},
 		Commands: []*cli.Command{
