@@ -4,12 +4,12 @@ package google
 import (
 	"context"
 	"errors"
-	"reflect"
 	"testing"
 
 	"secrets-init/mocks"
 	"secrets-init/pkg/secrets"
 
+	"github.com/stretchr/testify/assert"
 	secretspb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
@@ -205,7 +205,7 @@ func TestSecretsProvider_ResolveSecrets(t *testing.T) {
 				t.Errorf("SecretsProvider.ResolveSecrets() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !assert.ElementsMatch(t, got, tt.want) {
 				t.Errorf("SecretsProvider.ResolveSecrets() = %v, want %v", got, tt.want)
 			}
 			mockSM.AssertExpectations(t)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"secrets-init/pkg/secrets" //nolint:gci
 
@@ -14,6 +15,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	secretspb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1" //nolint:gci
 )
+
+var fullSecretRe = regexp.MustCompile(`projects/[^/]+/secrets/[^/+](/version/[^/+])?`)
+
+type result struct {
+	Env string
+	Err error
+}
 
 // SecretsProvider Google Cloud secrets provider
 type SecretsProvider struct {
@@ -53,40 +61,79 @@ func NewGoogleSecretsProvider(ctx context.Context, projectID string) (secrets.Pr
 func (sp SecretsProvider) ResolveSecrets(ctx context.Context, vars []string) ([]string, error) {
 	envs := make([]string, 0, len(vars))
 
-	fullSecretRe := regexp.MustCompile("projects/[^/]+/secrets/[^/+](/version/[^/+])?")
+	// Create a channel to collect the results
+	results := make(chan result, len(vars))
 
+	// Start a goroutine for each secret
+	var wg sync.WaitGroup
 	for _, env := range vars {
-		kv := strings.Split(env, "=")
-		key, value := kv[0], kv[1]
-		if strings.HasPrefix(value, "gcp:secretmanager:") {
-			// construct valid secret name
-			name := strings.TrimPrefix(value, "gcp:secretmanager:")
-
-			isLong := fullSecretRe.MatchString(name)
-
-			if !isLong {
-				if sp.projectID == "" {
-					return vars, errors.Errorf("failed to get secret \"%s\" from Google Secret Manager (unknown project)", name)
+		wg.Add(1)
+		go func(env string) {
+			defer wg.Done()
+			select {
+			case <-ctx.Done():
+				results <- result{Err: ctx.Err()}
+				return
+			default:
+				val, err := sp.processEnvironmentVariable(ctx, env)
+				if err != nil {
+					results <- result{Err: err}
+					return
 				}
-				name = fmt.Sprintf("projects/%s/secrets/%s", sp.projectID, name)
+				results <- result{Env: val}
 			}
+		}(env)
+	}
 
-			// if no version specified add latest
-			if !strings.Contains(name, "/versions/") {
-				name += "/versions/latest"
-			}
-			// get secret value
-			req := &secretspb.AccessSecretVersionRequest{
-				Name: name,
-			}
-			secret, err := sp.sm.AccessSecretVersion(ctx, req)
-			if err != nil {
-				return vars, errors.Wrap(err, "failed to get secret from Google Secret Manager")
-			}
-			env = key + "=" + string(secret.Payload.GetData())
+	// Start another goroutine to close the results channel when all fetch goroutines are done
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	// Collect the results
+	for res := range results {
+		if res.Err != nil {
+			return vars, res.Err
 		}
-		envs = append(envs, env)
+		envs = append(envs, res.Env)
 	}
 
 	return envs, nil
+}
+
+// processEnvironmentVariable processes the environment variable and replaces the value with the secret value
+func (sp SecretsProvider) processEnvironmentVariable(ctx context.Context, env string) (string, error) {
+	kv := strings.Split(env, "=")
+	key, value := kv[0], kv[1]
+	if !strings.HasPrefix(value, "gcp:secretmanager:") {
+		return env, nil
+	}
+
+	// construct valid secret name
+	name := strings.TrimPrefix(value, "gcp:secretmanager:")
+
+	isLong := fullSecretRe.MatchString(name)
+
+	if !isLong {
+		if sp.projectID == "" {
+			return "", errors.Errorf("failed to get secret \"%s\" from Google Secret Manager (unknown project)", name)
+		}
+		name = fmt.Sprintf("projects/%s/secrets/%s", sp.projectID, name)
+	}
+
+	// if no version specified add latest
+	if !strings.Contains(name, "/versions/") {
+		name += "/versions/latest"
+	}
+
+	// get secret value
+	req := &secretspb.AccessSecretVersionRequest{
+		Name: name,
+	}
+	secret, err := sp.sm.AccessSecretVersion(ctx, req)
+	if err != nil {
+		return "", fmt.Errorf("failed to get secret from Google Secret Manager: %w", err)
+	}
+	return key + "=" + string(secret.Payload.GetData()), nil
 }

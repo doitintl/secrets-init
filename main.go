@@ -80,7 +80,7 @@ func main() {
 		Action:  mainCmd,
 		Version: Version,
 	}
-	cli.VersionPrinter = func(c *cli.Context) {
+	cli.VersionPrinter = func(_ *cli.Context) {
 		fmt.Printf("version: %s\n", Version)
 		fmt.Printf("  build date: %s\n", BuildDate)
 		fmt.Printf("  commit: %s\n", GitCommit)
