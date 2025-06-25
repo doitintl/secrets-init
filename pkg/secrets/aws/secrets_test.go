@@ -93,6 +93,62 @@ func TestSecretsProvider_ResolveSecrets(t *testing.T) {
 			},
 		},
 		{
+			name: "get secret from from Secrets Manager json with nested key",
+			vars: []string{
+				"test-secret-1=arn:aws:secretsmanager:12345678-json-nested$password",
+				"test-secret-2=arn:aws:secretsmanager:12345678-json-nested$redis.password",
+				"test-secret-3=arn:aws:secretsmanager:12345678-json-nested$inexistent",
+			},
+			want: []string{
+				"test-secret-1=secret-password",
+				"test-secret-2=secret-redis-password",
+				"test-secret-3=arn:aws:secretsmanager:12345678-json-nested$inexistent",
+			},
+			mockServiceProvider: func(mockSM *mocks.SecretsManagerAPI, mockSSM *mocks.SSMAPI) secrets.Provider {
+				sp := SecretsProvider{sm: mockSM, ssm: mockSSM}
+				vars := map[string]string{
+					"arn:aws:secretsmanager:12345678-json-nested": "{\n  \"TEST_1\": \"test-secret-value-1\",\n  \"TEST_2\": \"test-secret-value-2\"\n, \"password\": \"secret-password\", \"redis\": {\"password\": \"secret-redis-password\"}\n}",
+				}
+				for n, v := range vars {
+					name := n
+					value := v
+					valueInput := secretsmanager.GetSecretValueInput{SecretId: &name}
+					valueOutput := secretsmanager.GetSecretValueOutput{SecretString: &value}
+					mockSM.On("GetSecretValue", &valueInput).Return(&valueOutput, nil)
+				}
+				return &sp
+			},
+		},
+		{
+			name: "get secret from Secrets Manager json with array elements",
+			vars: []string{
+				"api-key-1=arn:aws:secretsmanager:12345678-json-array$keys.0.value",
+				"api-key-2=arn:aws:secretsmanager:12345678-json-array$keys.1.value",
+				"api-key-3=arn:aws:secretsmanager:12345678-json-array$keys.2.value",
+				"non-existent=arn:aws:secretsmanager:12345678-json-array$keys.5.value",
+			},
+			want: []string{
+				"api-key-1=api-key-1-value",
+				"api-key-2=api-key-2-value",
+				"api-key-3=api-key-3-value",
+				"non-existent=arn:aws:secretsmanager:12345678-json-array$keys.5.value",
+			},
+			mockServiceProvider: func(mockSM *mocks.SecretsManagerAPI, mockSSM *mocks.SSMAPI) secrets.Provider {
+				sp := SecretsProvider{sm: mockSM, ssm: mockSSM}
+				vars := map[string]string{
+					"arn:aws:secretsmanager:12345678-json-array": "{\n  \"keys\": [\n {\"value\": \"api-key-1-value\"},\n    {\"value\": \"api-key-2-value\"},\n    {\"value\": \"api-key-3-value\"}\n  ]\n}",
+				}
+				for n, v := range vars {
+					name := n
+					value := v
+					valueInput := secretsmanager.GetSecretValueInput{SecretId: &name}
+					valueOutput := secretsmanager.GetSecretValueOutput{SecretString: &value}
+					mockSM.On("GetSecretValue", &valueInput).Return(&valueOutput, nil)
+				}
+				return &sp
+			},
+		},
+		{
 			name: "no secrets",
 			vars: []string{
 				"non-secret-1=hello-1",
@@ -161,6 +217,24 @@ func TestSecretsProvider_ResolveSecrets(t *testing.T) {
 				withDecryption := true
 				valueInput := ssm.GetParameterInput{Name: &secretName, WithDecryption: &withDecryption}
 				mockSSM.On("GetParameter", &valueInput).Return(nil, errors.New("test error"))
+				return &sp
+			},
+		},
+		{
+			name: "only first occurrence of separator is used",
+			vars: []string{
+				"test-secret=arn:aws:secretsmanager:multi$level$key",
+			},
+			want: []string{
+				"test-secret=the-value-for-level$key",
+			},
+			mockServiceProvider: func(mockSM *mocks.SecretsManagerAPI, mockSSM *mocks.SSMAPI) secrets.Provider {
+				sp := SecretsProvider{sm: mockSM, ssm: mockSSM}
+				secretName := "arn:aws:secretsmanager:multi"
+				secretValue := "{\"level$key\": \"the-value-for-level$key\"}"
+				valueInput := secretsmanager.GetSecretValueInput{SecretId: &secretName}
+				valueOutput := secretsmanager.GetSecretValueOutput{SecretString: &secretValue}
+				mockSM.On("GetSecretValue", &valueInput).Return(&valueOutput, nil)
 				return &sp
 			},
 		},

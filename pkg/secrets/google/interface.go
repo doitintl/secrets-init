@@ -3,7 +3,7 @@ package google
 import (
 	"context"
 
-	"github.com/googleapis/gax-go/v2"
+	gax "github.com/googleapis/gax-go/v2"
 	secretspb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 

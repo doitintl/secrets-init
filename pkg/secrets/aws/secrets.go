@@ -14,6 +14,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/pkg/errors" //nolint:gci
+
+	"github.com/tidwall/gjson"
 )
 
 const (
@@ -53,24 +55,35 @@ func (sp *SecretsProvider) ResolveSecrets(_ context.Context, vars []string) ([]s
 		kv := strings.Split(env, "=")
 		key, value := kv[0], kv[1]
 		if strings.HasPrefix(value, "arn:aws:secretsmanager") || strings.HasPrefix(value, "arn:aws-cn:secretsmanager") {
+			secretKey, nestedKey, _ := strings.Cut(value, "$")
+
 			// get secret value
-			secret, err := sp.sm.GetSecretValue(&secretsmanager.GetSecretValueInput{SecretId: &value})
+			secret, err := sp.sm.GetSecretValue(&secretsmanager.GetSecretValueInput{SecretId: &secretKey})
 			if err != nil {
 				return vars, errors.Wrap(err, "failed to get secret from AWS Secrets Manager")
 			}
+
 			if IsJSON(secret.SecretString) {
-				var keyValueSecret map[string]string
-				err = json.Unmarshal([]byte(*secret.SecretString), &keyValueSecret)
-				if err != nil {
-					return vars, errors.Wrap(err, "failed to decode key/value secret")
+				if nestedKey != "" {
+					jsonValue := gjson.Get(*secret.SecretString, nestedKey)
+					if jsonValue.Exists() {
+						env = key + "=" + jsonValue.String()
+					}
+				} else {
+					var keyValueSecret map[string]string
+					err = json.Unmarshal([]byte(*secret.SecretString), &keyValueSecret)
+					if err != nil {
+						return vars, errors.Wrap(err, "failed to decode key/value secret")
+					}
+					for key, value := range keyValueSecret {
+						e := key + "=" + value
+						envs = append(envs, e)
+					}
+					continue // We continue to not add this ENV variable but only the environment variables that exists in the JSON
 				}
-				for key, value := range keyValueSecret {
-					e := key + "=" + value
-					envs = append(envs, e)
-				}
-				continue // We continue to not add this ENV variable but only the environment variables that exists in the JSON
+			} else {
+				env = key + "=" + *secret.SecretString
 			}
-			env = key + "=" + *secret.SecretString
 		} else if (strings.HasPrefix(value, "arn:aws:ssm") || strings.HasPrefix(value, "arn:aws-cn:ssm")) && strings.Contains(value, ":parameter/") {
 			tokens := strings.Split(value, ":")
 			// valid parameter ARN arn:aws:ssm:REGION:ACCOUNT:parameter/PATH

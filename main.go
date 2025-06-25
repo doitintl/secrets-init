@@ -17,7 +17,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix" //nolint:gci
 )
 
